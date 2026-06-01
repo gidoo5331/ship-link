@@ -8,6 +8,7 @@ export type Car = {
   mileage: number
   engineSize: string
   transmission: string
+  color: string
   condition: string
   images: string[]
   features: string[]
@@ -35,4 +36,22 @@ export type LeadFormData = {
   agentReferral?: string
   carId: string
   carName: string
+}
+
+export type ProductSpec = {
+  label: string
+  value: string | number
+}
+
+export type Product = {
+  id: string
+  slug: string
+  name: string
+  category: string          // e.g. "Generators", "Lighting", "Electronics"
+  price: number
+  images: string[]
+  specs: ProductSpec[]
+  features: string[]
+  description: string
+  available: boolean
 }

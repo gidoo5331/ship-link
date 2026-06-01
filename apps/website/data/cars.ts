@@ -1,5 +1,7 @@
 import type { Car } from "@/types"
 
+const UNS = "https://images.unsplash.com"
+
 export const cars: Car[] = [
   {
     id: "1",
@@ -11,8 +13,13 @@ export const cars: Car[] = [
     mileage: 38000,
     engineSize: "2.5L",
     transmission: "Automatic",
+    color: "Midnight Black",
     condition: "Foreign Used",
-    images: ["/images/cars/camry-1.jpg"],
+    images: [
+      `${UNS}/photo-1621007947382-bb3c3994e3fb?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1623869675781-80aa31012a5a?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1622210642960-0f6a2cdbdc9f?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
     features: ["Leather Seats", "Reverse Camera", "Apple CarPlay", "Sunroof", "Lane Assist"],
     description:
       "A sleek, fuel-efficient sedan with a refined interior and smooth ride. This 2021 Camry is in excellent shape with full service history.",
@@ -28,8 +35,13 @@ export const cars: Car[] = [
     mileage: 45000,
     engineSize: "1.5T",
     transmission: "Automatic",
+    color: "Pearl White",
     condition: "Foreign Used",
-    images: ["/images/cars/crv-1.jpg"],
+    images: [
+      `${UNS}/photo-1681697390363-1142eb46b76d?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1623597780975-38ccd5030c83?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1605542203960-755c74d81964?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
     features: ["AWD", "Honda Sensing Suite", "Heated Seats", "Power Tailgate", "Android Auto"],
     description:
       "A practical and reliable crossover perfect for city and highway driving. The CR-V's turbocharged engine delivers confident performance.",
@@ -45,8 +57,13 @@ export const cars: Car[] = [
     mileage: 22000,
     engineSize: "3.5L V6",
     transmission: "Automatic",
+    color: "Obsidian Blue",
     condition: "Foreign Used",
-    images: ["/images/cars/rx350-1.jpg"],
+    images: [
+      `${UNS}/photo-1603050087224-98d2e1e8930a?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1592857723369-03e2e792626d?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1568074532337-80968739967c?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
     features: ["Premium Sound System", "Panoramic Sunroof", "360 Camera", "Heated & Ventilated Seats", "Mark Levinson Audio"],
     description:
       "Luxury meets reliability in this nearly-new Lexus RX 350. Premium cabin materials, whisper-quiet ride, and packed with safety tech.",
@@ -62,11 +79,104 @@ export const cars: Car[] = [
     mileage: 61000,
     engineSize: "2.8L Diesel",
     transmission: "Automatic",
+    color: "Silver Metallic",
     condition: "Foreign Used",
-    images: ["/images/cars/hilux-1.jpg"],
+    images: [
+      `${UNS}/photo-1559416523-140ddc3d238c?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1641333326784-24a9c21d3c4e?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1616395246149-85ab95ff92ad?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
     features: ["4WD", "Diff Lock", "Tow Bar", "Cargo Liner", "Reverse Sensors"],
     description:
       "Ghana's favourite work truck. This Hilux has been well maintained and is ready to handle any terrain — city roads or bush tracks.",
+    available: true,
+  },
+  {
+    id: "5",
+    slug: "2019-toyota-vitz",
+    make: "Toyota",
+    model: "Vitz",
+    year: 2019,
+    price: 9500,
+    mileage: 52000,
+    engineSize: "1.3L",
+    transmission: "Automatic",
+    color: "Chilli Red",
+    condition: "Foreign Used",
+    images: [
+      `${UNS}/photo-1648127787393-2b6d1de12a1f?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1685783230956-87ebcaf7f171?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1647269855378-6ecf52eb9a8c?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
+    features: ["Fuel Economy", "Reverse Camera", "Bluetooth Audio", "Keyless Entry", "Auto AC"],
+    description:
+      "The Vitz is Ghana's go-to city car — compact, fuel-sipping, and easy to park anywhere. This 2019 model is ideal for daily commutes and tight urban roads.",
+    available: true,
+  },
+  {
+    id: "6",
+    slug: "2020-toyota-voxy",
+    make: "Toyota",
+    model: "Voxy",
+    year: 2020,
+    price: 19500,
+    mileage: 41000,
+    engineSize: "2.0L",
+    transmission: "Automatic",
+    color: "Pearl White",
+    condition: "Foreign Used",
+    images: [
+      `${UNS}/photo-1558101847-e017d5e414a4?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1775054185026-8dc74fac136f?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1627927141576-0256f4c21ab1?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
+    features: ["8-Seater", "Power Sliding Doors", "DVD Entertainment", "Reverse Camera", "Captain Seats"],
+    description:
+      "The Voxy is the family people mover of choice. With 8 seats, sliding rear doors, and a spacious cabin, it handles school runs, family trips, and airport pickups with ease.",
+    available: true,
+  },
+  {
+    id: "7",
+    slug: "2020-toyota-land-cruiser-prado",
+    make: "Toyota",
+    model: "Land Cruiser Prado",
+    year: 2020,
+    price: 44000,
+    mileage: 35000,
+    engineSize: "2.8L Diesel",
+    transmission: "Automatic",
+    color: "Graphite Grey",
+    condition: "Foreign Used",
+    images: [
+      `${UNS}/photo-1613859492095-85d9944f09f6?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1610064094665-57e727e29f8b?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1603094539103-af7ea353eda4?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
+    features: ["4WD", "Crawl Control", "Kinetic Dynamic Suspension", "Leather Interior", "360 Camera"],
+    description:
+      "Built for every road Ghana throws at it. The Prado TXL combines luxury-grade comfort with serious off-road capability — from Accra highways to Northern bush tracks.",
+    available: true,
+  },
+  {
+    id: "8",
+    slug: "2019-mercedes-benz-c-class",
+    make: "Mercedes-Benz",
+    model: "C 200",
+    year: 2019,
+    price: 24500,
+    mileage: 48000,
+    engineSize: "2.0L Turbo",
+    transmission: "Automatic",
+    color: "Iridium Silver",
+    condition: "Foreign Used",
+    images: [
+      `${UNS}/photo-1615228939096-9ead6c74008e?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1605556816125-d752c226247b?w=800&h=500&q=80&auto=format&fit=crop`,
+      `${UNS}/photo-1542230387-bfc77d26903e?w=800&h=500&q=80&auto=format&fit=crop`,
+    ],
+    features: ["Ambient Lighting", "Burmester Sound System", "Panoramic Roof", "MBUX Infotainment", "Heated Seats"],
+    description:
+      "Drive something that turns heads. The C 200 delivers that signature Mercedes refinement — a turbocharged engine, premium interior, and executive presence at every stop.",
     available: true,
   },
 ]

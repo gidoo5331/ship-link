@@ -3,18 +3,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { Car } from "@/types"
 import { Fuel, Gauge, ArrowRight } from "lucide-react"
+import { formatGHS, formatUSD } from "@/lib/currency"
 
 type Props = {
   car: Car
 }
 
 export default function CarCard({ car }: Props) {
-  const formattedPrice = car.price.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  })
-
   const formattedMileage = car.mileage.toLocaleString("en-US")
 
   return (
@@ -54,7 +49,10 @@ export default function CarCard({ car }: Props) {
               {car.make} {car.model}
             </h3>
           </div>
-          <p className="text-lg font-bold text-primary">{formattedPrice}</p>
+          <div className="text-right">
+            <p className="text-lg font-bold text-primary">{formatGHS(car.price)}</p>
+            <p className="text-xs text-muted-foreground">{formatUSD(car.price)}</p>
+          </div>
         </div>
 
         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
