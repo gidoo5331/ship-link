@@ -1,14 +1,85 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-  moduleFormat    = "cjs"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  COMPANY_STAFF
+  AGENT
+  CUSTOMER
+}
+
+enum StaffRole {
+  LOGISTICS
+  FINANCE
+  SUPPORT
+}
+
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(uuid())
+  role         Role
+  staffRole    StaffRole?
+  firstName    String
+  lastName     String
+  email        String     @unique
+  phone        String?
+  password     String
+  isActive     Boolean    @default(true)
+  companyId    String?
+  company      Company?   @relation(fields: [companyId], references: [id])
+  agent        Agent?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Company {
+  id        String            @id @default(uuid())
+  name      String
+  status    CompanyStatus     @default(PENDING)
+  email     String?
+  phone     String?
+  address   String?
+  logoUrl   String?
+  users     User[]
+  agents    Agent[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model Agent {
+  id                   String               @id @default(uuid())
+  userId               String               @unique
+  user                 User                 @relation(fields: [userId], references: [id])
+  companyId            String
+  company              Company              @relation(fields: [companyId], references: [id])
+  region               String
+  city                 String
+  profession           String?
+  referralCode         String               @unique
+  gpsCoordinates       String?
+  trustScore           Float                @default(5.0)
+  isAvailable          Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 }
