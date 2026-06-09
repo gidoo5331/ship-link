@@ -13,18 +13,12 @@ datasource db {
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-enum Role {
-  SUPER_ADMIN
-  COMPANY_ADMIN
-  COMPANY_STAFF
-  AGENT
-  CUSTOMER
-}
-
-enum StaffRole {
-  LOGISTICS
-  FINANCE
-  SUPPORT
+enum SystemRole {
+  SUPER_ADMIN   // ShipLink platform admin — full access, all companies
+  COMPANY_ADMIN // Full access to their own company — can manage roles
+  COMPANY_STAFF // Access determined entirely by their assigned dynamic Role
+  AGENT         // Verification + assigned customers only
+  CUSTOMER      // Own shipments, payments, contracts only
 }
 
 enum CompanyStatus {
@@ -33,13 +27,44 @@ enum CompanyStatus {
   SUSPENDED
 }
 
+enum VerificationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
 
 // ─── Models ──────────────────────────────────────────────────────────────────
 
+// Dynamic role created by company admin or staff with roles:manage permission
+model Role {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([name, companyId])
+}
+
+// One row per resource granted to a role
+model RolePermission {
+  id       String   @id @default(uuid())
+  roleId   String
+  role     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource String
+  actions  String[]
+
+  @@unique([roleId, resource])
+}
+
 model User {
   id           String     @id @default(uuid())
-  role         Role
-  staffRole    StaffRole?
+  systemRole   SystemRole
   firstName    String
   lastName     String
   email        String     @unique
@@ -48,38 +73,44 @@ model User {
   isActive     Boolean    @default(true)
   companyId    String?
   company      Company?   @relation(fields: [companyId], references: [id])
+  roleId       String?    // assigned dynamic Role — only for COMPANY_STAFF
+  role         Role?      @relation(fields: [roleId], references: [id])
   agent        Agent?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
 
 model Company {
-  id        String            @id @default(uuid())
-  name      String
-  status    CompanyStatus     @default(PENDING)
-  email     String?
-  phone     String?
-  address   String?
-  logoUrl   String?
-  users     User[]
-  agents    Agent[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id           String            @id @default(uuid())
+  name         String
+  subdomain    String            @unique
+  customDomain String?           @unique
+  status       CompanyStatus     @default(PENDING)
+  email        String?
+  phone        String?
+  address      String?
+  logoUrl      String?
+  users        User[]
+  agents       Agent[]
+  roles        Role[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 }
 
 model Agent {
-  id                   String               @id @default(uuid())
-  userId               String               @unique
-  user                 User                 @relation(fields: [userId], references: [id])
+  id                   String                @id @default(uuid())
+  userId               String                @unique
+  user                 User                  @relation(fields: [userId], references: [id])
   companyId            String
-  company              Company              @relation(fields: [companyId], references: [id])
+  company              Company               @relation(fields: [companyId], references: [id])
   region               String
   city                 String
   profession           String?
-  referralCode         String               @unique
+  referralCode         String                @unique
   gpsCoordinates       String?
-  trustScore           Float                @default(5.0)
-  isAvailable          Boolean              @default(true)
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  trustScore           Float                 @default(5.0)
+  verificationStatus   VerificationStatus    @default(PENDING)
+  isAvailable          Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 }
