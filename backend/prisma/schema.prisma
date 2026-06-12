@@ -10,7 +10,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 enum SystemRole {
@@ -18,7 +17,6 @@ enum SystemRole {
   COMPANY_ADMIN // Full access to their own company — can manage roles
   COMPANY_STAFF // Access determined entirely by their assigned dynamic Role
   AGENT         // Verification + assigned customers only
-  CUSTOMER      // Own shipments, payments, contracts only
 }
 
 enum CompanyStatus {
@@ -73,7 +71,7 @@ model User {
   phone        String?
   password     String
   isActive     Boolean    @default(true)
-  companyId    String?
+  companyId    String?    // null for SUPER_ADMIN
   company      Company?   @relation(fields: [companyId], references: [id])
   roleId       String?    // assigned dynamic Role — only for COMPANY_STAFF
   role         Role?      @relation(fields: [roleId], references: [id])
@@ -85,40 +83,61 @@ model User {
 }
 
 model Company {
-  id           String            @id @default(uuid())
-  name         String           @unique
-  subdomain    String            @unique
-  customDomain String?           @unique
-  status       CompanyStatus     @default(PENDING)
+  id           String        @id @default(uuid())
+  name         String
+  subdomain    String        @unique
+  customDomain String?       @unique
+  status       CompanyStatus @default(PENDING)
   email        String?
   phone        String?
   address      String?
   logoUrl      String?
   users        User[]
   agents       Agent[]
+  customers    Customer[]
   roles        Role[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@map("companies")
 }
 
 model Agent {
-  id                   String                @id @default(uuid())
-  userId               String                @unique
-  user                 User                  @relation(fields: [userId], references: [id])
-  companyId            String
-  company              Company               @relation(fields: [companyId], references: [id])
-  region               String
-  city                 String
-  profession           String?
-  referralCode         String                @unique
-  gpsCoordinates       String?
-  trustScore           Float                 @default(5.0)
-  verificationStatus   VerificationStatus    @default(PENDING)
-  isAvailable          Boolean               @default(true)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id])
+  companyId          String
+  company            Company            @relation(fields: [companyId], references: [id])
+  region             String
+  city               String
+  profession         String?
+  referralCode       String             @unique
+  gpsCoordinates     String?
+  trustScore         Float              @default(5.0)
+  verificationStatus VerificationStatus @default(PENDING)
+  isAvailable        Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@map("agents")
+}
+
+// External — the people buying products. May or may not have login access.
+model Customer {
+  id              String   @id @default(uuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+  firstName       String
+  lastName        String
+  phone           String
+  email           String?  @unique
+  password    String?  // null until/unless customer self-registers
+  ghanaCardNumber String?
+  address         String?
+  region          String?
+  city            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("customers")
 }

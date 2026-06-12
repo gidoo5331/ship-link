@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { SnakeCaseInterceptor } from './shared';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,9 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe({whitelist: true,}))
+
+  // convert all outgoing JSON to snake_case to match frontend convention
+  app.useGlobalInterceptors(new SnakeCaseInterceptor());
 
   await app.listen(process.env.PORT ?? 3000);
 }
