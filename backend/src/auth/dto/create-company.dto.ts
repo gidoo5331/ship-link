@@ -2,9 +2,9 @@ import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   Matches,
-  MinLength,
 } from 'class-validator';
 
 export class CreateCompanyDto {
@@ -22,7 +22,7 @@ export class CreateCompanyDto {
   company_email?: string
 
   @IsOptional()
-  @IsString()
+  @IsPhoneNumber()
   company_phone?: string
 
   @IsString()
@@ -37,12 +37,7 @@ export class CreateCompanyDto {
   @IsNotEmpty()
   email!: string
 
-  @IsString()
+  @IsPhoneNumber()
   @IsNotEmpty()
   phone!: string
-
-  @IsString()
-  @MinLength(8)
-  @IsNotEmpty()
-  password!: string
 }

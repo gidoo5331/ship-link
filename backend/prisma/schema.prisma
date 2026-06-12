@@ -61,6 +61,7 @@ model RolePermission {
   actions  String[]
 
   @@unique([roleId, resource])
+  @@map("role_permissions")
 }
 
 model User {
@@ -85,7 +86,7 @@ model User {
 
 model Company {
   id           String            @id @default(uuid())
-  name         String
+  name         String           @unique
   subdomain    String            @unique
   customDomain String?           @unique
   status       CompanyStatus     @default(PENDING)
