@@ -49,6 +49,7 @@ model Role {
   updatedAt   DateTime         @updatedAt
 
   @@unique([name, companyId])
+  @@map("roles")
 }
 
 // One row per resource granted to a role
@@ -78,6 +79,8 @@ model User {
   agent        Agent?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  @@map("users")
 }
 
 model Company {
@@ -95,6 +98,8 @@ model Company {
   roles        Role[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+
+  @@map("companies")
 }
 
 model Agent {
@@ -113,4 +118,6 @@ model Agent {
   isAvailable          Boolean               @default(true)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
+
+  @@map("agents")
 }
