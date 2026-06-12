@@ -1,13 +1,15 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateCompanyDto, SignInDto } from './dto';
 import * as argon from 'argon2'
 import { randomBytes } from 'crypto'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService, ) {}
+    constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService ) {}
 
     async createCompany(dto: CreateCompanyDto) {
         const subdomain = dto.subdomain ?? dto.company_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
@@ -48,6 +50,41 @@ export class AuthService {
 
 
     async login(dto: SignInDto){
-        return 'login'
-    }
+        // find user 
+    const user = await this.prisma.user.findUnique({
+      where:{
+        email: dto.email
+      }
+    })
+
+    // if user does not exist throw exception
+    if (!user) throw new ForbiddenException("Credentials incorrect")
+      
+      // compare password
+      const pwMatches = await argon.verify(user.password, dto.password) 
+      
+      // if password incorrect throw exception
+      if (!pwMatches) throw new ForbiddenException("Credentials incorrect")
+
+    // Send user and token
+    const { password, ...safeUser } = user; // remove password from the returned user object
+
+    const { access_token } = await this.signToken(user.id, user.email, user.systemRole);
+
+    return { access_token, user: safeUser };
+  }
+
+
+async signToken(userId: string, email: string, systemRole: string ): Promise<{ access_token: string }> {
+    const payload = { sub: userId, email, systemRole };
+    const secret = this.config.get('JWT_SECRET');
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret: secret
+    });
+    return { access_token : token };
+  }
+
+
 }
+
