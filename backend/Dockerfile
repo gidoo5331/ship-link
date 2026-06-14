@@ -8,7 +8,7 @@ RUN npm install -g yarn
 WORKDIR /app
 
 # Copy dependencies
-COPY package.json yarn-lock ./
+COPY package.json yarn.lock ./
 
 # Install dependencies (including dev dependencies)
 RUN yarn install --frozen-lockfile
