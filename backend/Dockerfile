@@ -16,6 +16,8 @@ RUN yarn install --frozen-lockfile
 # Copy source files
 COPY . .
 
+RUN npx prisma generate
+
 RUN rm -f tsconfig.build.tsbuildinfo
 
 # Expose port and start the application
