@@ -1,14 +1,14 @@
 
 FROM node:20-alpine
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install yarn globally
+RUN npm install -g yarn
 
 # Set working directory
 WORKDIR /app
 
 # Copy dependencies
-COPY package.json yarn-lock.yaml ./
+COPY package.json yarn-lock ./
 
 # Install dependencies (including dev dependencies)
 RUN yarn install --frozen-lockfile
