@@ -1,5 +1,5 @@
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Install yarn globally
 # RUN npm install -g yarn
