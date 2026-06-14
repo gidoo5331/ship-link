@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # Install yarn globally
-RUN npm install -g yarn
+# RUN npm install -g yarn
 
 # Set working directory
 WORKDIR /app
