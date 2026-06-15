@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SystemRole } from 'generated/prisma/enums';
@@ -25,9 +26,7 @@ export class SystemRoleGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest();
 
     if (!requiredRoles.includes(user.systemRole)) {
-      throw new ForbiddenException(
-        'You do not have permission to access this resource',
-      );
+      throw new  UnauthorizedException()
     }
 
     return true;

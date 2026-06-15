@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -9,19 +10,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { SystemRoleGuard } from '../auth/guards/system-role.guard';
-import { SystemRoles } from '../auth/decorators/system-roles.decorator';
-import { SystemRole } from '@prisma/client';
 import { CompanyService } from './company.service';
-import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UpdateCompanyStatusDto } from './dto/update-company-status.dto';
-import { JwtAuthGuard } from 'src/auth/guard';
+import { JwtAuthGuard, PermissionsGuard, SystemRoleGuard } from 'src/auth/guard';
+import { SystemRole } from 'generated/prisma/enums';
+import { GetUser, RequirePermissions, SystemRolesDecorator } from 'src/auth/decorator';
+import type { User } from 'generated/prisma/client';
 
 @ApiTags('Companies')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, SystemRoleGuard)
-@SystemRoles(SystemRole.SUPER_ADMIN)
+@SystemRolesDecorator(SystemRole.SUPER_ADMIN)
 @Controller('companies')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
@@ -69,22 +69,18 @@ export class CompanyController {
 
 
 // ── COMPANY_ADMIN + COMPANY_STAFF (with permission) ───────────────────────
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @ApiOperation({ summary: 'Get own company profile' })
-  getMyCompany(@GetUser() user: CurrentUserPayload) {
-    return this.companyService.findOne(user.companyId);
-  }
-
   @Patch('me')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions({ resource: 'company', actions: ['update'] })
   @ApiOperation({ summary: 'Update own company profile' })
   updateMyCompany(
-    @GetUser() user: CurrentUserPayload,
+    @GetUser() user: User,
     @Body() dto: UpdateCompanyDto,
   ) {
-    return this.companyService.update(user.companyId, dto);
+    if (!user.companyId) {
+      throw new BadRequestException('User is not assigned to a company');
+    }
+
+    return this.companyService.updateCompany(user.companyId, dto);
   }
 }
