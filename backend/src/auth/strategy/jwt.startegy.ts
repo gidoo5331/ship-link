@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config/dist/config.service";
 import { PassportStrategy } from "@nestjs/passport";
+import { CompanyStatus } from "generated/prisma/enums";
 import { Strategy, ExtractJwt } from "passport-jwt";
 import { PrismaService } from "src/prisma/prisma.service";
 
@@ -22,6 +23,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user || !user.isActive) {
     throw new UnauthorizedException('Account is deactivated');
   }
+
+  if (user.companyId) {
+  // const company = await this.companiesService.findById(user.companyId);
+  // if (company.status !== CompanyStatus.APPROVED) {
+  //   throw new UnauthorizedException('Company account is not active');
+  // }
+}
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
