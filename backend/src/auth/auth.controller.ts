@@ -4,14 +4,15 @@ import { CreateCompanyDto, SignInDto } from './dto';
 import { GetUser } from './decorator';
 import type { User } from 'generated/prisma/client';
 import { JwtAuthGuard } from './guard';
+import { CompanyService } from 'src/company/company.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) {}
+    constructor(private authService: AuthService, private companyService: CompanyService) {}
 
     @Post('register/company')
     createCompany(@Body() dto:CreateCompanyDto){
-        return this.authService.createCompany(dto)
+        return this.companyService.createCompany(dto)
     }
 
     @HttpCode(HttpStatus.OK)

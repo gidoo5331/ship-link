@@ -1,5 +1,3 @@
-// src/company/company.service.ts
-
 import {
   Injectable,
   NotFoundException,
@@ -9,11 +7,105 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UpdateCompanyStatusDto } from './dto/update-company-status.dto';
-import { CompanyStatus } from 'generated/prisma/enums';
+import { CompanyStatus, SystemRole } from 'generated/prisma/enums';
+import { CreateCompanyDto } from 'src/auth/dto';
+import * as argon from 'argon2'
+import { randomBytes } from 'crypto'
+import { RolesService } from 'src/roles/roles.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { RESOURCES } from 'src/shared';
+
 
 @Injectable()
 export class CompanyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,
+    private readonly rolesService: RolesService,) {}
+
+  // ── Called by AuthService (POST /auth/register-company)
+  // status = PENDING — waits for super admin approval
+  async createCompany(dto: CreateCompanyDto) {
+    return this._createCompany(dto, CompanyStatus.PENDING);
+  }
+
+  // ── Called by CompanyController (POST /companies — SUPER_ADMIN)
+  // status = APPROVED — no approval needed
+  async createApprovedCompany(dto: CreateCompanyDto) {
+    return this._createCompany(dto, CompanyStatus.APPROVED);
+  }
+
+  private async _createCompany(dto: CreateCompanyDto, status: CompanyStatus) {
+    const subdomain = dto.subdomain ?? dto.company_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    // Generate a temp password
+    const rawPassword = randomBytes(4).toString('hex') // e.g. "a3f9bc12"
+    const passwordHash = await argon.hash(rawPassword);
+
+    try {
+        return this.prisma.$transaction(async (tx) => {
+      // step 1 — create company
+      const company = await tx.company.create({
+        data: {
+          name: dto.company_name,
+          subdomain,
+          email: dto.company_email,
+          phone: dto.company_phone,
+          status,
+          users: {
+            create: {
+              firstName: dto.first_name,
+              lastName: dto.last_name,
+              email: dto.email,
+              phone: dto.phone,
+              password: passwordHash,
+              systemRole: SystemRole.COMPANY_ADMIN,
+            },
+          },
+        },
+         include: {
+            users: true,
+        },
+      });
+
+      // step 2 — create default "Full Access" role for the company
+    //  const role = await this.rolesService.createDefaultRoles(company.id);
+     const role = await tx.role.create({
+  data: {
+    name: 'Full Access',
+    description:
+      'Complete control — equivalent to the owner except billing and account-level actions',
+    companyId: company.id,
+    permissions: {
+      create: RESOURCES.map((resource) => ({
+        resource,
+        actions: ['create', 'read', 'update', 'delete'],
+      })),
+    },
+  },
+});
+      await tx.user.update({
+    where: {
+      id: company.users[0].id,
+    },
+    data: {
+      roleId: role.id,
+    },
+  });
+      // return message + temp password if it was auto-generated
+      // (AuthService will email this to the owner)
+      return {
+        message: status === CompanyStatus.PENDING ? 'Registration submitted. Awaiting approval.' : 'Company created and approved.',
+      }});
+    } catch (error) {
+       if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+                const fields: string[] = (error.meta as any)?.driverAdapterError?.cause?.constraint?.fields ?? []
+                if (fields.includes('email')) throw new ConflictException('Email already in use')
+                if (fields.includes('subdomain')) throw new ConflictException('Subdomain already taken')
+                throw new ConflictException('A unique constraint was violated')
+            }
+      throw error;
+    }
+  }
+
 
   // ── Find all companies (SUPER_ADMIN) ──────────────────────────────────────
 

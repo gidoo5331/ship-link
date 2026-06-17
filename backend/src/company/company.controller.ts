@@ -17,6 +17,7 @@ import { JwtAuthGuard, PermissionsGuard, SystemRoleGuard } from 'src/auth/guard'
 import { SystemRole } from 'generated/prisma/enums';
 import { GetUser, RequirePermissions, SystemRolesDecorator } from 'src/auth/decorator';
 import type { User } from 'generated/prisma/client';
+import { CreateCompanyDto } from 'src/auth/dto';
 
 @ApiTags('Companies')
 @ApiBearerAuth()
@@ -25,6 +26,12 @@ import type { User } from 'generated/prisma/client';
 @Controller('companies')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
+
+  // ── Admin Create Approve company ─────────────────────────────────────────────────────
+ @Post('/admin')
+    createApprovedCompany(@Body() dto:CreateCompanyDto){
+        return this.companyService.createApprovedCompany(dto)
+    }
 
   // ── Get all companies ─────────────────────────────────────────────────────
 
