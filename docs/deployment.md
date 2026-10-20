@@ -35,7 +35,7 @@ Instance-specific values (public URL, Neon project ID) are in `docs/deployment.l
 - Buildpack runs `yarn install` → `yarn run build` → prunes devDependencies → runs `yarn start`
 
 ### Runtime config
-- **Start command:** must be `node dist/main` (via Northflank **CMD override** and/or `"start"` script in `package.json`)
+- **Start command:** must be `node dist/src/main` (via Northflank **CMD override** and/or `"start"` script in `package.json`)
 - **Port:** app must listen on `process.env.PORT` and host `0.0.0.0`; port must match the one in Northflank **Networking** (HTTP, public)
 
 ### Required `backend/package.json` scripts
@@ -43,7 +43,7 @@ Instance-specific values (public URL, Neon project ID) are in `docs/deployment.l
 "scripts": {
   "build": "prisma generate && nest build",
   "postinstall": "prisma generate",
-  "start": "node dist/main",
+  "start": "node dist/src/main",
   "start:dev": "nest start --watch"
 },
 "engines": { "node": "22.x" }
@@ -117,8 +117,9 @@ Northflank also injects `NF_*` variables automatically (e.g. `NF_REGION`, `NF_HO
 | Symptom | Cause | Fix |
 |---|---|---|
 | Build fails: `TS2339: Property 'role' / 'user' / 'rolePermission' does not exist on type 'PrismaService'` | Prisma client not generated on build server | `"build": "prisma generate && nest build"` + `"postinstall": "prisma generate"` |
-| Runtime: `/bin/sh: nest: not found`, exit code 127, container restarting | `start` script was `nest start`; Nest CLI is a devDependency and gets pruned | Start command `node dist/main` (CMD override and/or `package.json`) |
+| Runtime: `/bin/sh: nest: not found`, exit code 127, container restarting | `start` script was `nest start`; Nest CLI is a devDependency and gets pruned | Start command `node dist/src/main` (CMD override and/or `package.json`) |
 | Build fails: `@prisma/streams-local: The engine "node" is incompatible ... Expected ">=22.0.0". Got "20.x"` | `engines.node` set to `20.x`; Prisma 7 needs Node 22 | `"engines": { "node": "22.x" }` |
+| Runtime: `Error: Cannot find module '/workspace/dist/main'` | `prisma.config.ts` and `generated/` are compiled too, so output root is the backend folder → entry is `dist/src/main.js` | Start command `node dist/src/main` |
 | Browser shows `no healthy upstream` | App not running / crashing, or port mismatch | Check Logs; confirm start command, port, `0.0.0.0`, env vars |
 
 ---
