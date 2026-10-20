@@ -9,6 +9,18 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
+  // comma-separated list of allowed frontend origins, e.g. the Vercel URL
+  const corsOrigins = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({
+    origin: corsOrigins.length
+      ? corsOrigins
+      : process.env.NODE_ENV !== 'production',
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('ShipLink API')
     .setDescription(
@@ -29,6 +41,6 @@ async function bootstrap() {
   // convert all outgoing JSON to snake_case to match frontend convention
   app.useGlobalInterceptors(new SnakeCaseInterceptor());
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();
