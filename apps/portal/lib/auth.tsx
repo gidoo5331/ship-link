@@ -9,6 +9,7 @@ type AuthState = {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -43,7 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }, [])
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+  // re-read the user (and company) after it changes, e.g. a renamed company
+  const refreshUser = useCallback(async () => {
+    setUser(await api<User>("GET", "/auth/me"))
+  }, [])
+
+  return <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

@@ -48,9 +48,9 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Company",
     items: [
-      { label: "Staff", href: "/staff", icon: Briefcase, soon: true },
+      { label: "Staff", href: "/staff", icon: Briefcase },
       { label: "Roles & permissions", href: "/roles", icon: Lock, soon: true },
-      { label: "Settings", href: "/settings", icon: Settings, soon: true },
+      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ]
