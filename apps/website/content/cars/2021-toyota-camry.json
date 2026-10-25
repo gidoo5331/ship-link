@@ -1,0 +1,26 @@
+{
+  "title": "2021 Toyota Camry",
+  "available": true,
+  "make": "Toyota",
+  "model": "Camry",
+  "year": "2021",
+  "price": 22500,
+  "mileage": 38000,
+  "engineSize": "2.5L",
+  "transmission": "Automatic",
+  "color": "Midnight Black",
+  "condition": "Foreign Used",
+  "description": "A sleek, fuel-efficient sedan with a refined interior and smooth ride. This 2021 Camry is in excellent shape with full service history.",
+  "images": [
+    "/images/cars/2021-toyota-camry/images/0.jpg",
+    "/images/cars/2021-toyota-camry/images/1.jpg",
+    "/images/cars/2021-toyota-camry/images/2.jpg"
+  ],
+  "features": [
+    "Leather Seats",
+    "Reverse Camera",
+    "Apple CarPlay",
+    "Sunroof",
+    "Lane Assist"
+  ]
+}

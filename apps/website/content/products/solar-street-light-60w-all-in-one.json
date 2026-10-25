@@ -1,0 +1,46 @@
+{
+  "name": "60W All-in-One Solar Street Light",
+  "available": true,
+  "category": "lighting",
+  "price": 420,
+  "description": "No electrician, no PHCN connection, no running costs. This all-in-one solar street light installs on any pole in under an hour and runs automatically every night — with smart motion sensing to maximise battery life.",
+  "images": [
+    "/images/products/solar-street-light-60w-all-in-one/images/0.png",
+    "/images/products/solar-street-light-60w-all-in-one/images/1.png",
+    "/images/products/solar-street-light-60w-all-in-one/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "LED Power",
+      "value": "60W"
+    },
+    {
+      "label": "Solar Panel",
+      "value": "25W Monocrystalline"
+    },
+    {
+      "label": "Battery",
+      "value": "30Ah Lithium"
+    },
+    {
+      "label": "Backup Nights",
+      "value": "3 nights"
+    },
+    {
+      "label": "Motion Sensor",
+      "value": "Yes (8m range)"
+    },
+    {
+      "label": "IP Rating",
+      "value": "IP65"
+    }
+  ],
+  "features": [
+    "No Wiring Required",
+    "Motion Sensor (dims to 30% when idle)",
+    "3-Night Battery Backup",
+    "Dusk-to-Dawn Automation",
+    "Remote Control Included",
+    "Easy Pole Mounting"
+  ]
+}

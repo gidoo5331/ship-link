@@ -1,0 +1,26 @@
+{
+  "title": "2019 Mercedes-Benz C 200",
+  "available": true,
+  "make": "Mercedes-Benz",
+  "model": "C 200",
+  "year": "2019",
+  "price": 24500,
+  "mileage": 48000,
+  "engineSize": "2.0L Turbo",
+  "transmission": "Automatic",
+  "color": "Iridium Silver",
+  "condition": "Foreign Used",
+  "description": "Drive something that turns heads. The C 200 delivers that signature Mercedes refinement — a turbocharged engine, premium interior, and executive presence at every stop.",
+  "images": [
+    "/images/cars/2019-mercedes-benz-c-class/images/0.jpg",
+    "/images/cars/2019-mercedes-benz-c-class/images/1.jpg",
+    "/images/cars/2019-mercedes-benz-c-class/images/2.jpg"
+  ],
+  "features": [
+    "Ambient Lighting",
+    "Burmester Sound System",
+    "Panoramic Roof",
+    "MBUX Infotainment",
+    "Heated Seats"
+  ]
+}

@@ -1,17 +1,17 @@
 import Link from "next/link"
-import { company } from "@/data/company"
+import { getCompany } from "@/lib/content"
+import CompanyMark from "./company-mark"
 import { Phone, Mail, MapPin, MessageCircle } from "lucide-react"
 
-export default function Footer() {
+export default async function Footer() {
+  const company = await getCompany()
   return (
     <footer className="border-t border-border bg-slate-950 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">FV</span>
-              </div>
+              <CompanyMark company={company} />
               <span className="text-lg font-semibold text-white">{company.name}</span>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-400">{company.tagline}</p>

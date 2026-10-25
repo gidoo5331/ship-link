@@ -1,9 +1,10 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { company } from "@/data/company"
+import { getCompany } from "@/lib/content"
 import { ArrowRight, MessageCircle } from "lucide-react"
 
-export default function Hero() {
+export default async function Hero() {
+  const company = await getCompany()
   return (
     <section className="relative overflow-hidden bg-slate-950 py-20 sm:py-28 lg:py-36">
       <div

@@ -1,0 +1,26 @@
+{
+  "title": "2019 Toyota Hilux",
+  "available": true,
+  "make": "Toyota",
+  "model": "Hilux",
+  "year": "2019",
+  "price": 28500,
+  "mileage": 61000,
+  "engineSize": "2.8L Diesel",
+  "transmission": "Automatic",
+  "color": "Silver Metallic",
+  "condition": "Foreign Used",
+  "description": "Ghana's favourite work truck. This Hilux has been well maintained and is ready to handle any terrain — city roads or bush tracks.",
+  "images": [
+    "/images/cars/2019-toyota-hilux/images/0.jpg",
+    "/images/cars/2019-toyota-hilux/images/1.jpg",
+    "/images/cars/2019-toyota-hilux/images/2.jpg"
+  ],
+  "features": [
+    "4WD",
+    "Diff Lock",
+    "Tow Bar",
+    "Cargo Liner",
+    "Reverse Sensors"
+  ]
+}

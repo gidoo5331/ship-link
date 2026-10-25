@@ -1,0 +1,46 @@
+{
+  "name": "Honda EU22i 2KVA Inverter Generator",
+  "available": true,
+  "category": "generators",
+  "price": 2100,
+  "description": "The quietest generator we stock. The Honda EU22i runs at just 53 dB — barely louder than a conversation — making it perfect for homes, offices, and anywhere noise matters. Safe for all sensitive electronics.",
+  "images": [
+    "/images/products/honda-eu22i-2kva-inverter-generator/images/0.png",
+    "/images/products/honda-eu22i-2kva-inverter-generator/images/1.png",
+    "/images/products/honda-eu22i-2kva-inverter-generator/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "Power Output",
+      "value": "2.2 KVA"
+    },
+    {
+      "label": "Fuel Type",
+      "value": "Petrol"
+    },
+    {
+      "label": "Runtime (eco mode)",
+      "value": "8.1 hrs"
+    },
+    {
+      "label": "Tank Capacity",
+      "value": "3.6 L"
+    },
+    {
+      "label": "Noise Level",
+      "value": "53 dB"
+    },
+    {
+      "label": "Weight",
+      "value": "21 kg"
+    }
+  ],
+  "features": [
+    "Pure Sine Wave Inverter",
+    "Ultra Quiet (53 dB)",
+    "Safe for Laptops & Electronics",
+    "Eco-Throttle Mode",
+    "Parallel Capability",
+    "Lightweight & Portable"
+  ]
+}
