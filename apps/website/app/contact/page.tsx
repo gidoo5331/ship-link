@@ -1,49 +1,46 @@
 import type { Metadata } from "next"
-import { company } from "@/data/company"
+import { getCompany } from "@/api"
+import type { SiteCompany } from "@/types"
 import { Phone, Mail, MapPin, MessageCircle, Clock } from "lucide-react"
 import ContactFormWrapper from "@/components/contact/contact-form-wrapper"
 
-export const metadata: Metadata = {
-  title: `Contact Us — ${company.name}`,
-  description: `Get in touch with ${company.name}. Call, WhatsApp, or send us a message and we'll connect you with a local agent.`,
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompany()
+  return {
+    title: `Contact Us — ${company.name}`,
+    description: `Get in touch with ${company.name}. Call, WhatsApp, or send us a message.`,
+  }
 }
 
-const contactDetails = [
-  {
-    icon: Phone,
-    label: "Phone",
-    value: company.phone,
-    href: `tel:${company.phone}`,
-  },
-  {
-    icon: Mail,
-    label: "Email",
-    value: company.email,
-    href: `mailto:${company.email}`,
-  },
-  {
-    icon: MessageCircle,
-    label: "WhatsApp",
-    value: "Chat with us directly",
-    href: `https://wa.me/${company.whatsapp}`,
-    external: true,
-    highlight: true,
-  },
-  {
-    icon: MapPin,
-    label: "Address",
-    value: company.address,
-    href: undefined,
-  },
-  {
-    icon: Clock,
-    label: "Hours",
-    value: "Mon – Sat, 8am – 6pm",
-    href: undefined,
-  },
-]
+// only the details the company has filled in
+function contactDetailsFor(company: SiteCompany) {
+  return [
+    company.phone && { icon: Phone, label: "Phone", value: company.phone, href: `tel:${company.phone}` },
+    company.email && { icon: Mail, label: "Email", value: company.email, href: `mailto:${company.email}` },
+    company.whatsapp && {
+      icon: MessageCircle,
+      label: "WhatsApp",
+      value: "Chat with us directly",
+      href: `https://wa.me/${company.whatsapp}`,
+      external: true,
+      highlight: true,
+    },
+    company.address && { icon: MapPin, label: "Address", value: company.address, href: undefined },
+    company.isSample && { icon: Clock, label: "Hours", value: "Mon – Sat, 8am – 6pm", href: undefined },
+  ].filter((d) => !!d) as {
+    icon: typeof Phone
+    label: string
+    value: string
+    href?: string
+    external?: boolean
+    highlight?: boolean
+  }[]
+}
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const company = await getCompany()
+  const contactDetails = contactDetailsFor(company)
+
   return (
     <div className="bg-white">
       {/* Header */}
@@ -73,6 +70,12 @@ export default function ContactPage() {
               </p>
             </div>
 
+            {company.unavailable && (
+              <p role="status" className="rounded-lg border border-border bg-slate-50 px-4 py-3 text-sm text-muted-foreground">
+                Our contact details are temporarily unavailable. Please send us a message with the form and we&apos;ll get back to you.
+              </p>
+            )}
+
             <ul className="space-y-5">
               {contactDetails.map(({ icon: Icon, label, value, href, external, highlight }) => (
                 <li key={label} className="flex items-start gap-4">
@@ -99,6 +102,7 @@ export default function ContactPage() {
             </ul>
 
             {/* WhatsApp CTA card */}
+            {company.whatsapp && (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
               <div className="flex items-center gap-3">
                 <MessageCircle className="h-6 w-6 text-green-600" />
@@ -108,7 +112,7 @@ export default function ContactPage() {
                 Send us a WhatsApp message and we typically respond within minutes during business hours.
               </p>
               <a
-                href={`https://wa.me/${company.whatsapp}?text=Hi%20Frank%20Ventures%2C%20I%20have%20a%20question.`}
+                href={`https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hi ${company.name}, I have a question.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
@@ -117,6 +121,7 @@ export default function ContactPage() {
                 Open WhatsApp
               </a>
             </div>
+            )}
           </div>
 
           {/* Right — form */}

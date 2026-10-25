@@ -1,13 +1,16 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import type { Product } from "@/types"
+import type { CatalogProduct } from "@/types"
 import { ArrowRight, Tag } from "lucide-react"
-import { formatGHS, formatUSD } from "@/lib/currency"
+import { formatPrice } from "@/lib/currency"
 
-type Props = { product: Product }
+type Props = { product: CatalogProduct }
 
 export default function ProductCard({ product }: Props) {
+  const price = product.price !== null ? formatPrice(product.price, product.currency) : null
+  const specs = product.specs.filter((s) => s.value.trim()).slice(0, 2)
+
   return (
     <Card className="overflow-hidden py-0 transition-shadow hover:shadow-md">
       <div className="relative h-48 w-full overflow-hidden bg-slate-100">
@@ -23,9 +26,16 @@ export default function ProductCard({ product }: Props) {
             <Tag className="h-12 w-12" />
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-primary/90 px-2.5 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
-          {product.category}
-        </span>
+        {product.category && (
+          <span className="absolute left-3 top-3 rounded-full bg-primary/90 px-2.5 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
+            {product.category.name}
+          </span>
+        )}
+        {product.availability === "ON_REQUEST" && (
+          <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-0.5 text-xs font-medium text-foreground shadow-sm">
+            On request{product.leadTime ? ` · ${product.leadTime}` : ""}
+          </span>
+        )}
       </div>
 
       <CardContent className="p-5">
@@ -33,17 +43,23 @@ export default function ProductCard({ product }: Props) {
           {product.name}
         </h3>
 
-        <div className="mt-3">
-          <p className="text-lg font-bold text-primary">{formatGHS(product.price)}</p>
-          <p className="text-xs text-muted-foreground">{formatUSD(product.price)}</p>
-        </div>
+        {price ? (
+          <div className="mt-3">
+            <p className="text-lg font-bold text-primary">{price.main}</p>
+            {price.secondary && <p className="text-xs text-muted-foreground">{price.secondary}</p>}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm font-medium text-muted-foreground">Price on request</p>
+        )}
 
-        {product.specs.length > 0 && (
+        {specs.length > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
-            {product.specs[0].label}: <span className="font-medium text-foreground">{product.specs[0].value}</span>
-            {product.specs[1] && (
-              <> · {product.specs[1].label}: <span className="font-medium text-foreground">{product.specs[1].value}</span></>
-            )}
+            {specs.map((s, i) => (
+              <span key={s.label}>
+                {i > 0 && " · "}
+                {s.label}: <span className="font-medium text-foreground">{s.value}</span>
+              </span>
+            ))}
           </p>
         )}
 

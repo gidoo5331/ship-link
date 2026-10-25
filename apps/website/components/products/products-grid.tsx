@@ -1,38 +1,43 @@
 "use client"
 
 import { useState } from "react"
-import type { Product } from "@/types"
+import type { CatalogCategory, CatalogProduct } from "@/types"
 import ProductCard from "./product-card"
 import { cn } from "@/lib/utils"
 
 type Props = {
-  products: Product[]
-  categories: string[]
+  products: CatalogProduct[]
+  categories: CatalogCategory[]
+  initialCategory?: string // category slug
 }
 
-export default function ProductsGrid({ products, categories }: Props) {
-  const [active, setActive] = useState<string>("All")
+export default function ProductsGrid({ products, categories, initialCategory }: Props) {
+  const [active, setActive] = useState<string>(
+    initialCategory && categories.some((c) => c.slug === initialCategory) ? initialCategory : "all",
+  )
 
-  const filtered = active === "All" ? products : products.filter((p) => p.category === active)
+  const filtered = active === "all" ? products : products.filter((p) => p.category?.slug === active)
+  const tabs = [{ slug: "all", name: "All" }, ...categories]
 
   return (
     <div>
       {/* Category tabs */}
       <div className="flex flex-wrap gap-2">
-        {["All", ...categories].map((cat) => (
+        {tabs.map((cat) => (
           <button
-            key={cat}
-            onClick={() => setActive(cat)}
+            key={cat.slug}
+            onClick={() => setActive(cat.slug)}
+            aria-pressed={active === cat.slug}
             className={cn(
               "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-              active === cat
+              active === cat.slug
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-white text-muted-foreground hover:border-primary/40 hover:text-foreground"
             )}
           >
-            {cat}
+            {cat.name}
             <span className="ml-1.5 text-xs opacity-70">
-              ({cat === "All" ? products.length : products.filter((p) => p.category === cat).length})
+              ({cat.slug === "all" ? products.length : products.filter((p) => p.category?.slug === cat.slug).length})
             </span>
           </button>
         ))}

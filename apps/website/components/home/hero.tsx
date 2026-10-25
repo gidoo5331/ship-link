@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { company } from "@/data/company"
+import type { SiteCompany } from "@/types"
 import { ArrowRight, MessageCircle } from "lucide-react"
 
-export default function Hero() {
+export default function Hero({ company }: { company: SiteCompany }) {
   return (
     <section className="relative overflow-hidden bg-slate-950 py-20 sm:py-28 lg:py-36">
       <div
@@ -31,12 +31,13 @@ export default function Hero() {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link href="/cars">
-                Browse Cars
+              <Link href="/products">
+                Browse Products
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
 
+            {company.whatsapp && (
             <Button
               asChild
               size="lg"
@@ -52,9 +53,12 @@ export default function Hero() {
                 WhatsApp Us
               </a>
             </Button>
+            )}
           </div>
         </div>
 
+        {/* illustrative figures — only on the bundled sample site, never a real company's */}
+        {company.isSample && (
         <div className="mt-16 grid grid-cols-3 divide-x divide-slate-800 rounded-xl border border-slate-800 bg-slate-900/60 py-6 backdrop-blur">
           {[
             { value: "200+", label: "Cars Sold" },
@@ -67,6 +71,7 @@ export default function Hero() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   )

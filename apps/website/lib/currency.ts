@@ -15,3 +15,14 @@ export function formatUSD(usd: number): string {
     maximumFractionDigits: 0,
   })
 }
+
+// Main price shown in cedis, with the original USD below when priced in dollars
+export function formatPrice(amount: number, currency: string): { main: string; secondary: string | null } {
+  if (currency === "GHS") {
+    return {
+      main: amount.toLocaleString("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 0 }),
+      secondary: null,
+    }
+  }
+  return { main: formatGHS(amount), secondary: formatUSD(amount) }
+}

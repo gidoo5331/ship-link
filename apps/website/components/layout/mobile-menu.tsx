@@ -7,7 +7,6 @@ import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const links = [
-  { label: "Cars", href: "/cars" },
   { label: "Products", href: "/products" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -55,7 +54,7 @@ export default function MobileMenu() {
             </ul>
             <div className="mt-4 border-t border-border pt-4">
               <Button asChild className="w-full" onClick={() => setOpen(false)}>
-                <Link href="/cars">Browse Cars</Link>
+                <Link href="/products">Browse Products</Link>
               </Button>
             </div>
           </nav>

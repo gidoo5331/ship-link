@@ -1,12 +1,15 @@
 import type { Metadata } from "next"
-import { company } from "@/data/company"
+import { getCompany } from "@/api"
 import { ShieldCheck, FileText, MapPin, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-export const metadata: Metadata = {
-  title: `About Us — ${company.name}`,
-  description: company.about,
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompany()
+  return {
+    title: `About Us — ${company.name}`,
+    description: company.about,
+  }
 }
 
 const regions = [
@@ -19,12 +22,12 @@ const values = [
   {
     icon: ShieldCheck,
     title: "Verified Agents Only",
-    body: "Every agent in our network goes through a personal vetting process. They carry official Frank Ventures ID and are held to a strict code of conduct. If an agent ever behaves outside our standards, we want to know.",
+    body: "Every agent in our network goes through a personal vetting process. They carry official company ID and are held to a strict code of conduct. If an agent ever behaves outside our standards, we want to know.",
   },
   {
     icon: FileText,
     title: "Signed Contracts, Every Time",
-    body: "Every purchase is backed by a written agreement — signed by you, your agent, and Frank Ventures. You know exactly what you're buying, for exactly how much, with no hidden charges.",
+    body: "Every purchase is backed by a written agreement — signed by you, your agent, and us. You know exactly what you're buying, for exactly how much, with no hidden charges.",
   },
   {
     icon: Users,
@@ -45,7 +48,9 @@ const steps = [
   { step: "04", title: "Sale is Completed", body: "Papers are signed, payment is confirmed, and the agent earns their commission. The customer drives away with a car they trust." },
 ]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const company = await getCompany()
+
   return (
     <div className="bg-white">
       {/* Hero */}
@@ -53,7 +58,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              About Frank Ventures
+              About {company.name}
             </h1>
             <p className="mt-6 text-lg leading-8 text-slate-400">
               {company.about}
@@ -96,7 +101,7 @@ export default function AboutPage() {
               How Our Agent Network Works
             </h2>
             <p className="mt-4 text-base text-muted-foreground">
-              Agents are the backbone of Frank Ventures. They make car buying personal, local, and safe.
+              Agents are the backbone of {company.name}. They make car buying personal, local, and safe.
             </p>
           </div>
 

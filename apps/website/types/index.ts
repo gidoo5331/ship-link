@@ -55,3 +55,44 @@ export type Product = {
   description: string
   available: boolean
 }
+
+// ── Catalog from the ShipLink API (public endpoints) ────────────────────────
+
+// Company details shown on the site; empty strings mean "not set"
+export type SiteCompany = {
+  name: string
+  tagline: string
+  phone: string
+  email: string
+  address: string
+  logoUrl: string | null
+  whatsapp: string
+  about: string
+  heroHeading: string
+  heroSubheading: string
+  // true when showing the bundled sample company (no API configured)
+  isSample: boolean
+  // true when the API couldn't be reached and only the name is known
+  unavailable?: boolean
+}
+
+export type CatalogCategory = {
+  id: string
+  name: string
+  slug: string
+}
+
+export type CatalogProduct = {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  price: number | null
+  currency: string
+  availability: "AVAILABLE" | "ON_REQUEST" | "SOLD"
+  leadTime: string | null
+  images: string[]
+  specs: { label: string; value: string }[]
+  features: string[]
+  category: CatalogCategory | null
+}
