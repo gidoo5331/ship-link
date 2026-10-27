@@ -34,9 +34,40 @@ export function initials(text: string) {
     .join("")
 }
 
+// "just now", "5 min ago", "3 h ago", "yesterday", "12 Oct"
+export function timeAgo(iso: string) {
+  const then = new Date(iso)
+  const minutes = Math.round((Date.now() - then.getTime()) / 60_000)
+  if (minutes < 1) return "just now"
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} h ago`
+  if (hours < 48) return "yesterday"
+  return then.toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(then.getFullYear() !== new Date().getFullYear() && { year: "numeric" }) })
+}
+
+export function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+}
+
+// wa.me needs digits with the country code; leads store that as phoneKey
+export function whatsappLink(phoneKey: string, text?: string) {
+  return `https://wa.me/${phoneKey}${text ? `?text=${encodeURIComponent(text)}` : ""}`
+}
+
+const RENTAL_UNITS = { DAY: "day", WEEK: "week", MONTH: "month" } as const
+
+// "GHS 600 / day"
+export function formatRentalRate(rental: { rate: number; currency: string; unit: keyof typeof RENTAL_UNITS }) {
+  return `${formatMoney(rental.rate, rental.currency)} / ${RENTAL_UNITS[rental.unit]}`
+}
+
+// Keys the API can return in publishChecklist. "offer" only appears for
+// products that are neither for sale nor for rent.
 export const CHECKLIST_LABELS: Record<string, string> = {
   photo: "At least one photo",
   category: "Category chosen",
+  offer: "For sale or for rent",
   price: "Price estimate set",
   description: "Description written",
 }

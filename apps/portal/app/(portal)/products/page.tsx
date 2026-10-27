@@ -5,12 +5,13 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { ImageIcon, ListTree, Plus, Search } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { inputClass } from "@/components/form"
+import { Badge, inputClass } from "@/components/form"
+import { LoadError, ProductCardSkeleton, RefreshButton, SkeletonGroup } from "@/components/load-state"
 import { CategoriesManager } from "@/components/products/categories-manager"
 import { ProductStatusBadge } from "@/components/products/status"
 import { api, ApiError } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
-import { formatMoney, ghsEstimate } from "@/lib/format"
+import { formatMoney, formatRentalRate, ghsEstimate } from "@/lib/format"
 import type { Category, Paginated, Product } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +20,12 @@ const STATUS_FILTERS = [
   { value: "PUBLISHED", label: "Published" },
   { value: "DRAFT", label: "Drafts" },
   { value: "ARCHIVED", label: "Archived" },
+]
+
+const LISTING_FILTERS = [
+  { value: "", label: "Sale and rent" },
+  { value: "sale", label: "For sale" },
+  { value: "rent", label: "For rent" },
 ]
 
 // The top bar searches by navigating to /products?search=…
@@ -38,13 +45,17 @@ function ProductsRoute() {
 
 function ProductsView({ initialSearch }: { initialSearch: string }) {
   const { user } = useAuth()
+  const rentalsEnabled = !!user?.company?.rentalsEnabled
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Paginated<Product> | null>(null)
   const [tab, setTab] = useState<string>("all")
   const [status, setStatus] = useState("")
+  const [listing, setListing] = useState("")
   const [search, setSearch] = useState(initialSearch)
   const [manageOpen, setManageOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null) // failed actions, e.g. publish
+  const [loadError, setLoadError] = useState<string | null>(null) // the list itself failed to load
+  const [loading, setLoading] = useState(true)
   const [publishing, setPublishing] = useState<string | null>(null)
 
   const loadCategories = useCallback(
@@ -56,17 +67,22 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
     const params = new URLSearchParams({ pageSize: "60" })
     if (tab !== "all") params.set("categoryId", tab)
     if (status) params.set("status", status)
+    if (rentalsEnabled && listing) params.set("listing", listing)
     if (search.trim()) params.set("search", search.trim())
+    setLoading(true)
     try {
       setProducts(await api<Paginated<Product>>("GET", companyPath(user, `/products?${params}`)))
-      setError(null)
+      setLoadError(null)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not load products")
+      setLoadError(e instanceof ApiError ? e.message : "Couldn't load your products.")
+    } finally {
+      setLoading(false)
     }
-  }, [user, tab, status, search])
+  }, [user, tab, status, listing, rentalsEnabled, search])
 
+  // categories failing just hides the tabs; the product list shows the error
   useEffect(() => {
-    loadCategories().catch(() => setError("Could not load categories"))
+    loadCategories().catch(() => {})
   }, [loadCategories])
 
   // debounce typing in the search box
@@ -74,6 +90,12 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
     const t = setTimeout(loadProducts, 250)
     return () => clearTimeout(t)
   }, [loadProducts])
+
+  const refresh = () => {
+    setError(null)
+    loadCategories().catch(() => {})
+    loadProducts()
+  }
 
   async function publish(product: Product) {
     setPublishing(product.id)
@@ -174,6 +196,21 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
               </option>
             ))}
           </select>
+          {rentalsEnabled && (
+            <>
+              <label htmlFor="listing-filter" className="sr-only">
+                Sale or rent
+              </label>
+              <select id="listing-filter" value={listing} onChange={(e) => setListing(e.target.value)} className={cn(inputClass, "w-auto")}>
+                {LISTING_FILTERS.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          <RefreshButton onClick={refresh} busy={loading} label="Refresh products" />
         </div>
       </div>
 
@@ -183,14 +220,30 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
         </p>
       )}
 
-      {products === null ? (
-        <p className="py-10 text-center text-sm text-muted-foreground" role="status">
-          Loading products…
+      {/* a refresh failed but we still have the last list: keep it, say so */}
+      {loadError && products !== null && (
+        <p role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {loadError} Showing the last list we loaded.
+          <button type="button" onClick={refresh} className="font-medium underline underline-offset-4">
+            Try again
+          </button>
         </p>
+      )}
+
+      {products === null ? (
+        loadError ? (
+          <LoadError message={loadError} onRetry={refresh} retrying={loading} />
+        ) : (
+          <SkeletonGroup label="Loading products…" className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+            {Array.from({ length: 8 }, (_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </SkeletonGroup>
+        )
       ) : products.items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-12 text-center">
           <p className="text-sm text-muted-foreground">
-            {search || status || tab !== "all" ? "No products match these filters." : "No products yet. Add your first one."}
+            {search || status || listing || tab !== "all" ? "No products match these filters." : "No products yet. Add your first one."}
           </p>
           <Link href="/products/new" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10 px-4")}>
             <Plus aria-hidden />
@@ -215,6 +268,11 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
                     </span>
                   )}
                   <ProductStatusBadge product={p} className="absolute left-2.5 top-2.5 shadow-sm" />
+                  {rentalsEnabled && p.rental && (
+                    <Badge tone="amber" className="absolute right-2.5 top-2.5 shadow-sm">
+                      {p.forSale ? "Sale & rent" : "For rent"}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-3.5">
                   <div className="flex flex-col gap-0.5">
@@ -223,16 +281,27 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
                     </span>
                     <h2 className="text-[15px] font-semibold leading-snug">{p.name}</h2>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    {p.price !== null ? (
-                      <>
-                        <span className="font-semibold tabular-nums">{formatMoney(p.price, p.currency)}</span>
-                        {ghsEstimate(p.price, p.currency) && (
-                          <span className="text-xs tabular-nums text-muted-foreground">≈ {ghsEstimate(p.price, p.currency)}</span>
+                  <div className="flex flex-col gap-1">
+                    {/* rent-only products have no sale price to show */}
+                    {(!rentalsEnabled || p.forSale) && (
+                      <div className="flex items-baseline gap-2">
+                        {p.price !== null ? (
+                          <>
+                            <span className="font-semibold tabular-nums">{formatMoney(p.price, p.currency)}</span>
+                            {ghsEstimate(p.price, p.currency) && (
+                              <span className="text-xs tabular-nums text-muted-foreground">≈ {ghsEstimate(p.price, p.currency)}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No price yet</span>
                         )}
-                      </>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No price yet</span>
+                      </div>
+                    )}
+                    {rentalsEnabled && p.rental && (
+                      <span className="text-sm tabular-nums">
+                        <span className="text-muted-foreground">Rent </span>
+                        <span className="font-semibold">{formatRentalRate(p.rental)}</span>
+                      </span>
                     )}
                   </div>
                   <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2.5">
@@ -243,7 +312,7 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
                           ? "Archived"
                           : canPublish
                             ? "Ready to publish"
-                            : `Needs: ${p.publishChecklist.join(", ")}`}
+                            : `Needs: ${p.publishChecklist.map((k) => (k === "offer" ? "sale or rent" : k)).join(", ")}`}
                     </span>
                     <div className="flex gap-1.5">
                       <Link href={`/products/${p.id}`} className={buttonVariants({ variant: "outline" })}>

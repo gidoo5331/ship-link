@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { AlertTriangle, CheckCircle2, Globe, ImageOff, Inbox, Package, Plus, type LucideIcon } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge, Card } from "@/components/form"
 import { ProductStatusBadge } from "@/components/products/status"
+import { RefreshButton, RowSkeleton, Skeleton, SkeletonGroup } from "@/components/load-state"
 import { api } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
-import type { Paginated, Product } from "@/lib/types"
+import { timeAgo } from "@/lib/format"
+import type { Lead, LeadPage, Paginated, Product } from "@/lib/types"
 import { SAMPLE, STAGES } from "@/lib/sample-data"
 import { cn } from "@/lib/utils"
 
@@ -30,10 +32,22 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const [stats, setStats] = useState<CatalogStats | null>(null)
   const [error, setError] = useState(false)
+  // null while loading; fails quietly for staff without leads access
+  const [leads, setLeads] = useState<{ newCount: number; latest: Lead[] } | null>(null)
 
-  useEffect(() => {
+  const [loading, setLoading] = useState(true)
+
+  const loadLeads = useCallback(
+    () =>
+      api<LeadPage>("GET", companyPath(user, "/leads?pageSize=4"))
+        .then((p) => setLeads({ newCount: p.counts.new, latest: p.items }))
+        .catch(() => setLeads({ newCount: 0, latest: [] })),
+    [user],
+  )
+
+  const loadCatalog = useCallback(() => {
     const path = (q: string) => companyPath(user, `/products?${q}`)
-    Promise.all([
+    return Promise.all([
       api<Paginated<Product>>("GET", path("pageSize=6")),
       api<Paginated<Product>>("GET", path("status=PUBLISHED&availability=AVAILABLE&pageSize=1")),
       api<Paginated<Product>>("GET", path("status=PUBLISHED&availability=ON_REQUEST&pageSize=1")),
@@ -47,8 +61,23 @@ export default function DashboardPage() {
           recent: recent.items,
         }),
       )
+      .then(() => setError(false))
       .catch(() => setError(true))
   }, [user])
+
+  const refresh = useCallback(() => {
+    setLoading(true)
+    return Promise.all([loadCatalog(), loadLeads()]).finally(() => setLoading(false))
+  }, [loadCatalog, loadLeads])
+
+  // deferred so state isn't set synchronously inside the effect
+  useEffect(() => {
+    const t = setTimeout(refresh, 0)
+    return () => clearTimeout(t)
+  }, [refresh])
+
+  // stats are "loading" until they arrive, unless loading failed
+  const statsLoading = stats === null && !error
 
   const ready = stats?.drafts.filter((p) => p.publishChecklist.length === 0) ?? []
   const noPhotos = stats?.drafts.filter((p) => p.publishChecklist.includes("photo")) ?? []
@@ -62,15 +91,21 @@ export default function DashboardPage() {
           </h1>
           <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening at {user?.company?.name ?? "your company"}.</p>
         </div>
-        <Link href="/products/new" className={cn(buttonVariants({ size: "lg" }), "h-10 px-4")}>
-          <Plus aria-hidden />
-          Add product
-        </Link>
+        <div className="flex gap-2">
+          <RefreshButton onClick={refresh} busy={loading} label="Refresh dashboard" />
+          <Link href="/products/new" className={cn(buttonVariants({ size: "lg" }), "h-10 px-4")}>
+            <Plus aria-hidden />
+            Add product
+          </Link>
+        </div>
       </div>
 
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          Couldn&apos;t load your catalog numbers. Refresh to try again.
+          Couldn&apos;t load your catalog numbers.{" "}
+          <button type="button" onClick={refresh} className="font-medium underline underline-offset-4">
+            Try again
+          </button>
         </p>
       )}
 
@@ -78,18 +113,27 @@ export default function DashboardPage() {
         <Stat
           label="Live on your website"
           icon={Globe}
+          loading={statsLoading}
           value={stats ? String(stats.live) : "–"}
-          sub={stats ? `of ${stats.total} product${stats.total === 1 ? "" : "s"}` : "Loading…"}
+          sub={stats ? `of ${stats.total} product${stats.total === 1 ? "" : "s"}` : "Couldn't load"}
           href="/products"
         />
         <Stat
           label="Drafts"
           icon={Package}
+          loading={statsLoading}
           value={stats ? String(stats.drafts.length) : "–"}
-          sub={stats ? `${ready.length} ready to publish` : "Loading…"}
+          sub={stats ? `${ready.length} ready to publish` : "Couldn't load"}
           href="/products"
         />
-        <Stat label="New leads" icon={Inbox} value={String(SAMPLE.newLeads)} sub={`${SAMPLE.leadsToday} today, from your website`} sample />
+        <Stat
+          label="New leads"
+          icon={Inbox}
+          loading={leads === null}
+          value={leads ? String(leads.newCount) : "–"}
+          sub={leads ? (leads.newCount ? "Waiting for a reply" : "All caught up") : "Couldn't load"}
+          href="/leads"
+        />
         <Stat label="Open shipments" icon={Package} value={String(SAMPLE.openShipments)} sub="Requested to ready for pickup" sample />
       </section>
 
@@ -105,9 +149,15 @@ export default function DashboardPage() {
               </Link>
             </div>
             {stats === null ? (
-              <p className="px-5 pb-5 text-sm text-muted-foreground" role="status">
-                Loading…
-              </p>
+              statsLoading ? (
+                <SkeletonGroup label="Loading products…" className="divide-y border-t px-5">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <RowSkeleton key={i} avatar />
+                  ))}
+                </SkeletonGroup>
+              ) : (
+                <p className="px-5 pb-5 text-sm text-muted-foreground">Not available right now.</p>
+              )
             ) : stats.recent.length === 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5">
                 <p className="text-sm text-muted-foreground">No products yet. Add one and publish it to your website.</p>
@@ -205,16 +255,30 @@ export default function DashboardPage() {
               Needs attention
             </h2>
             {stats === null ? (
-              <p className="text-sm text-muted-foreground" role="status">
-                Loading…
-              </p>
-            ) : ready.length === 0 && noPhotos.length === 0 ? (
+              statsLoading ? (
+                <SkeletonGroup label="Loading tasks…" className="divide-y border-t">
+                  <RowSkeleton avatar />
+                  <RowSkeleton avatar />
+                </SkeletonGroup>
+              ) : (
+                <p className="border-t pt-3 text-sm text-muted-foreground">Not available right now.</p>
+              )
+            ) : ready.length === 0 && noPhotos.length === 0 && !leads?.newCount ? (
               <p className="flex items-center gap-2 border-t pt-3 text-sm text-muted-foreground">
                 <CheckCircle2 className="size-4 text-green-700" aria-hidden />
-                Nothing waiting on you in the catalog.
+                Nothing waiting on you.
               </p>
             ) : (
               <>
+                {!!leads?.newCount && (
+                  <Attention
+                    href="/leads"
+                    icon={Inbox}
+                    tone="bg-blue-50 text-blue-700"
+                    title={`${leads.newCount} new lead${leads.newCount === 1 ? "" : "s"} waiting for a call`}
+                    meta="People who enquired on your website"
+                  />
+                )}
                 {ready.slice(0, 3).map((p) => (
                   <Attention
                     key={p.id}
@@ -243,17 +307,31 @@ export default function DashboardPage() {
               <h2 id="leads-h" className="text-base font-semibold">
                 Latest leads
               </h2>
-              <SampleTag />
+              <Link href="/leads" className="text-sm font-medium underline-offset-4 hover:underline">
+                All leads
+              </Link>
             </div>
-            {SAMPLE.latestLeads.map((l) => (
-              <div key={l.name} className="flex items-center gap-3 border-t py-2.5">
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-medium">{l.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">{l.subject}</span>
-                </span>
-                <span className="whitespace-nowrap text-xs text-muted-foreground">{l.when}</span>
-              </div>
-            ))}
+            {leads === null ? (
+              <SkeletonGroup label="Loading leads…" className="divide-y border-t">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <RowSkeleton key={i} />
+                ))}
+              </SkeletonGroup>
+            ) : leads.latest.length === 0 ? (
+              <p className="border-t pt-3 text-sm text-muted-foreground">No enquiries yet. They arrive when someone clicks “I’m interested” on your website.</p>
+            ) : (
+              leads.latest.map((l) => (
+                <Link key={l.id} href={`/leads?id=${l.id}`} className="flex items-center gap-3 border-t py-2.5 hover:bg-muted/40">
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-sm font-medium">{l.fullName}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {l.productName ? `Interested in ${l.productName}` : `Request: ${l.customRequest}`}
+                    </span>
+                  </span>
+                  <span className="whitespace-nowrap text-xs text-muted-foreground">{timeAgo(l.createdAt)}</span>
+                </Link>
+              ))
+            )}
           </Card>
         </div>
       </div>
@@ -268,7 +346,9 @@ function Stat({
   icon: Icon,
   href,
   sample,
+  loading,
 }: {
+  loading?: boolean
   label: string
   value: string
   sub: string
@@ -282,11 +362,21 @@ function Stat({
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <Icon className="size-4 text-muted-foreground" aria-hidden />
       </span>
-      <span className="text-3xl font-semibold tracking-tight tabular-nums">{value}</span>
-      <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        {sub}
-        {sample && <SampleTag />}
-      </span>
+      {loading ? (
+        <span role="status" className="flex flex-col gap-2 py-1">
+          <span className="sr-only">Loading {label.toLowerCase()}…</span>
+          <Skeleton className="h-8 w-14" />
+          <Skeleton className="h-3 w-28" />
+        </span>
+      ) : (
+        <>
+          <span className="text-3xl font-semibold tracking-tight tabular-nums">{value}</span>
+          <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {sub}
+            {sample && <SampleTag />}
+          </span>
+        </>
+      )}
     </>
   )
   const className = "flex flex-col gap-2 rounded-xl border bg-card p-5"

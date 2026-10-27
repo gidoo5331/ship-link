@@ -10,17 +10,21 @@ import {
   AvailabilityField,
   CategoryField,
   FeaturesField,
+  OfferField,
+  offerError,
+  offerFrom,
+  type OfferState,
   parsePrice,
   PriceField,
   SpecsField,
   specsFromTemplate,
 } from "@/components/products/fields"
 import { ImageManager } from "@/components/products/image-manager"
-import { apiErrorText, PublishChecklist, toProductPayload } from "@/components/products/product-form"
+import { apiErrorText, PublishChecklist, publishChecklistKeys, toProductPayload } from "@/components/products/product-form"
 import { AVAILABILITY_LABELS } from "@/components/products/status"
 import { api } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
-import { formatMoney, ghsEstimate } from "@/lib/format"
+import { formatMoney, formatRentalRate, ghsEstimate } from "@/lib/format"
 import type { Category, Product, ProductAvailability, ProductSpec } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -34,10 +38,12 @@ type Details = {
   leadTime: string
   specs: ProductSpec[]
   features: string[]
+  offer: OfferState
 }
 
 function detailsFrom(p: Product): Details {
   return {
+    offer: offerFrom(p),
     price: p.price != null ? String(p.price) : "",
     currency: p.currency,
     description: p.description ?? "",
@@ -49,7 +55,7 @@ function detailsFrom(p: Product): Details {
 }
 
 // Which step fixes each publish-checklist item
-const FIX_STEP: Record<string, number> = { photo: 2, category: 1, price: 3, description: 3 }
+const FIX_STEP: Record<string, number> = { photo: 2, category: 1, offer: 3, price: 3, description: 3 }
 
 // New products are created in four steps. The draft is saved after step 1,
 // and every step saves, so leaving part-way keeps a draft. Progress lives in
@@ -70,6 +76,7 @@ export function ProductWizard() {
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
+  const rentalsEnabled = !!user?.company?.rentalsEnabled
   const productsPath = companyPath(user, "/products")
 
   useEffect(() => {
@@ -155,10 +162,15 @@ export function ProductWizard() {
       setError("Price must be a number.")
       return false
     }
+    const rentalError = rentalsEnabled ? offerError(details.offer) : null
+    if (rentalError) {
+      setError(rentalError)
+      return false
+    }
     const updated = await api<Product>(
       "PATCH",
       `${productsPath}/${product.id}`,
-      toProductPayload({ ...details, categoryId: product.categoryId ?? "" }),
+      toProductPayload({ ...details, categoryId: product.categoryId ?? "" }, rentalsEnabled),
     )
     setProduct(updated)
     setDetails(detailsFrom(updated))
@@ -314,7 +326,15 @@ export function ProductWizard() {
                 onChange={setCategoryId}
                 hint="Its spec fields are filled in for you in the Details step."
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-2 border-t pt-5">
+                {/* nothing is saved until Continue; once it is, the header offers "Save draft & exit" */}
+                {product ? (
+                  <span />
+                ) : (
+                  <Link href="/products" className={cn(buttonVariants({ variant: "ghost", size: "lg" }), "h-10 px-4")}>
+                    Cancel
+                  </Link>
+                )}
                 <Button type="submit" size="lg" className="h-10 px-5" disabled={busy || !name.trim()}>
                   {busy ? "Saving…" : "Continue"}
                 </Button>
@@ -353,12 +373,23 @@ export function ProductWizard() {
               </h1>
               <p className="text-sm text-muted-foreground">What customers read on the product page.</p>
             </div>
-            <PriceField
-              price={details.price}
-              currency={details.currency}
-              onPriceChange={(price) => setDetails({ ...details, price })}
-              onCurrencyChange={(currency) => setDetails({ ...details, currency })}
-            />
+            {rentalsEnabled ? (
+              <OfferField
+                offer={details.offer}
+                onChange={(offer) => setDetails({ ...details, offer })}
+                price={details.price}
+                currency={details.currency}
+                onPriceChange={(price) => setDetails({ ...details, price })}
+                onCurrencyChange={(currency) => setDetails({ ...details, currency })}
+              />
+            ) : (
+              <PriceField
+                price={details.price}
+                currency={details.currency}
+                onPriceChange={(price) => setDetails({ ...details, price })}
+                onCurrencyChange={(currency) => setDetails({ ...details, currency })}
+              />
+            )}
             <Field label="Description" htmlFor="description">
               <textarea
                 id="description"
@@ -407,10 +438,11 @@ export function ProductWizard() {
             </div>
 
             <div className="flex flex-wrap gap-6">
-              <ProductPreview product={product} />
+              <ProductPreview product={product} rentalsEnabled={rentalsEnabled} />
               <div className="flex min-w-60 flex-1 flex-col gap-3">
                 <h2 className="text-sm font-medium">{missing.length ? "Before you can publish" : "Ready to publish"}</h2>
                 <PublishChecklist
+                  keys={publishChecklistKeys(rentalsEnabled, !rentalsEnabled || product.forSale)}
                   missing={missing}
                   renderAction={(key) => (
                     <button type="button" onClick={() => goTo(FIX_STEP[key])} className="text-sm font-medium underline underline-offset-4">
@@ -457,7 +489,7 @@ function StepButtons({ onBack, onNext, nextLabel, busy }: { onBack: () => void; 
   )
 }
 
-function ProductPreview({ product }: { product: Product }) {
+function ProductPreview({ product, rentalsEnabled }: { product: Product; rentalsEnabled: boolean }) {
   const cover = product.images[0]?.url
   const ghs = product.price !== null ? ghsEstimate(product.price, product.currency) : null
   const specs = product.specs.filter((s) => s.value.trim()).slice(0, 2)
@@ -478,13 +510,19 @@ function ProductPreview({ product }: { product: Product }) {
       <div className="flex flex-col gap-1.5 p-4">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{product.category?.name ?? "No category"}</span>
         <span className="text-sm font-semibold leading-snug">{product.name}</span>
-        {product.price !== null ? (
+        {!product.forSale ? null : product.price !== null ? (
           <span className="text-sm">
             <span className="font-semibold tabular-nums">{ghs ?? formatMoney(product.price, product.currency)}</span>
             {ghs && <span className="text-muted-foreground"> · {formatMoney(product.price, product.currency)}</span>}
           </span>
         ) : (
           <span className="text-sm text-muted-foreground">No price yet</span>
+        )}
+        {rentalsEnabled && product.rental && (
+          <span className="text-sm">
+            <span className="text-muted-foreground">For rent: </span>
+            <span className="font-semibold tabular-nums">{formatRentalRate(product.rental)}</span>
+          </span>
         )}
         {specs.length > 0 && (
           <span className="text-xs text-muted-foreground">{specs.map((s) => `${s.label}: ${s.value}`).join(" · ")}</span>

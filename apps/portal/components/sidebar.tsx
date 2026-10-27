@@ -30,7 +30,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Operations",
     items: [
-      { label: "Leads", href: "/leads", icon: Inbox, soon: true },
+      { label: "Leads", href: "/leads", icon: Inbox },
       { label: "Shipments", href: "/shipments", icon: Package, soon: true },
       { label: "Verifications", href: "/verifications", icon: ShieldCheck, soon: true },
       { label: "Payments", href: "/payments", icon: CreditCard, soon: true },
@@ -41,7 +41,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "People",
     items: [
-      { label: "Customers", href: "/customers", icon: Users, soon: true },
+      { label: "Customers", href: "/customers", icon: Users },
       { label: "Agents", href: "/agents", icon: MapPin, soon: true },
     ],
   },
@@ -49,7 +49,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     label: "Company",
     items: [
       { label: "Staff", href: "/staff", icon: Briefcase },
-      { label: "Roles & permissions", href: "/roles", icon: Lock, soon: true },
+      { label: "Roles & permissions", href: "/roles", icon: Lock },
       { label: "Settings", href: "/settings", icon: Settings },
     ],
   },

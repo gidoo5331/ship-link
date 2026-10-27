@@ -1,5 +1,5 @@
 // Placeholder data for dashboard sections whose APIs don't exist yet
-// (leads and shipments — Milestone 2). Every section using this is labelled
+// (shipments). Every section using this is labelled
 // "Sample data" in the UI. Replace with API calls as those modules land.
 
 export type ShipmentStage =
@@ -28,8 +28,6 @@ export const STAGES: { key: ShipmentStage; label: string; tone: "neutral" | "blu
 ]
 
 export const SAMPLE = {
-  newLeads: 8,
-  leadsToday: 3,
   openShipments: 24,
   stageCounts: {
     REQUESTED: 6,
@@ -50,10 +48,4 @@ export const SAMPLE = {
     { id: "SR-10482", customer: "Kwame Asante", product: "Toyota Corolla 2018", stage: "CLEARING_CUSTOMS", cost: "GHS 86,500" },
     { id: "SR-10477", customer: "Efua Mensah", product: "Ceramic floor tiles (40 ft)", stage: "SHIPPED", cost: "GHS 121,000" },
   ] as { id: string; customer: string; product: string; stage: ShipmentStage; cost: string }[],
-  latestLeads: [
-    { name: "Akosua Boateng", subject: "Interested in 2021 Toyota Camry", when: "2 h ago" },
-    { name: "Emmanuel Tetteh", subject: "Custom request: 2022 Toyota Camry", when: "3 h ago" },
-    { name: "Mavis Ankrah", subject: "Interested in Kipor 5 kVA Generator", when: "5 h ago" },
-    { name: "Yusif Alhassan", subject: "Interested in Panasonic 25 L Microwave", when: "Yesterday" },
-  ],
 }

@@ -53,14 +53,20 @@ type Method = "GET" | "POST" | "PATCH" | "DELETE"
 
 export async function api<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const token = getToken()
-  const res = await fetch(API_URL + path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  let res: Response
+  try {
+    res = await fetch(API_URL + path, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch {
+    // no response at all: offline, server down or wrong API URL
+    throw new ApiError(0, "Can't reach the server. Check your connection and try again.")
+  }
 
   const data = res.status === 204 ? null : await res.json().catch(() => null)
 

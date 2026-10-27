@@ -5,10 +5,10 @@
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Field, inputClass } from "@/components/form"
+import { Field, inputClass, textareaClass } from "@/components/form"
 import { AVAILABILITY_LABELS } from "@/components/products/status"
 import { ghsEstimate } from "@/lib/format"
-import type { Category, ProductAvailability, ProductSpec } from "@/lib/types"
+import type { Category, Product, ProductAvailability, ProductSpec, RentalUnit } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const AVAILABILITY_HINTS: Record<ProductAvailability, string> = {
@@ -107,6 +107,170 @@ export function PriceField({
         />
       </div>
     </Field>
+  )
+}
+
+// ── Sale and rental ─────────────────────────────────────────────────────────
+
+export type OfferState = {
+  forSale: boolean
+  forRent: boolean
+  rentalRate: string
+  rentalCurrency: string
+  rentalUnit: RentalUnit
+  rentalNotes: string
+}
+
+export function offerFrom(p: Product): OfferState {
+  return {
+    forSale: p.forSale,
+    forRent: !!p.rental,
+    rentalRate: p.rental ? String(p.rental.rate) : "",
+    rentalCurrency: p.rental?.currency ?? "GHS",
+    rentalUnit: p.rental?.unit ?? "DAY",
+    rentalNotes: p.rental?.notes ?? "",
+  }
+}
+
+// What's wrong with the rental part, if anything
+export function offerError(o: OfferState): string | null {
+  if (!o.forRent) return null
+  const rate = parsePrice(o.rentalRate)
+  if (rate === null) return "Enter a rental rate, or untick “For rent”."
+  if (Number.isNaN(rate)) return "Rental rate must be a number."
+  return null
+}
+
+export function offerPayload(o: OfferState) {
+  return {
+    forSale: o.forSale,
+    rental: o.forRent
+      ? { rate: parsePrice(o.rentalRate), currency: o.rentalCurrency, unit: o.rentalUnit, notes: o.rentalNotes.trim() || null }
+      : null,
+  }
+}
+
+const UNIT_LABELS: Record<RentalUnit, string> = { DAY: "per day", WEEK: "per week", MONTH: "per month" }
+
+// Shown instead of the plain price field when the company does rentals.
+// The sale price lives under "For sale"; the rental rate under "For rent".
+export function OfferField({
+  offer,
+  onChange,
+  price,
+  currency,
+  onPriceChange,
+  onCurrencyChange,
+}: {
+  offer: OfferState
+  onChange: (offer: OfferState) => void
+  price: string
+  currency: string
+  onPriceChange: (price: string) => void
+  onCurrencyChange: (currency: string) => void
+}) {
+  const set = <K extends keyof OfferState>(key: K, value: OfferState[K]) => onChange({ ...offer, [key]: value })
+  const rate = parsePrice(offer.rentalRate)
+  const rateInvalid = rate !== null && Number.isNaN(rate)
+
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="mb-2 text-sm font-medium">How is it offered?</legend>
+
+      <div className={cn("flex flex-col gap-3 rounded-lg border p-3", offer.forSale && "border-primary bg-muted/30")}>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={offer.forSale}
+            onChange={(e) => set("forSale", e.target.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">For sale</span>
+            <span className="text-xs text-muted-foreground">Customers can buy it</span>
+          </span>
+        </label>
+        {offer.forSale && (
+          <div className="pl-7">
+            <PriceField price={price} currency={currency} onPriceChange={onPriceChange} onCurrencyChange={onCurrencyChange} />
+          </div>
+        )}
+      </div>
+
+      <div className={cn("flex flex-col gap-3 rounded-lg border p-3", offer.forRent && "border-primary bg-muted/30")}>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={offer.forRent}
+            onChange={(e) => set("forRent", e.target.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">For rent</span>
+            <span className="text-xs text-muted-foreground">Customers can enquire to rent it. You agree dates and terms with them directly.</span>
+          </span>
+        </label>
+        {offer.forRent && (
+          <div className="flex flex-col gap-3 pl-7">
+            <Field label="Rental rate" htmlFor="rental-rate" error={rateInvalid ? "Enter a number, e.g. 600" : undefined}>
+              <div className="flex flex-wrap gap-2">
+                <label htmlFor="rental-currency" className="sr-only">
+                  Rental currency
+                </label>
+                <select
+                  id="rental-currency"
+                  value={offer.rentalCurrency}
+                  onChange={(e) => set("rentalCurrency", e.target.value)}
+                  className={cn(inputClass, "w-24 shrink-0")}
+                >
+                  <option>GHS</option>
+                  <option>USD</option>
+                </select>
+                <input
+                  id="rental-rate"
+                  inputMode="decimal"
+                  value={offer.rentalRate}
+                  onChange={(e) => set("rentalRate", e.target.value)}
+                  aria-invalid={rateInvalid}
+                  placeholder="0"
+                  className={cn(inputClass, "min-w-24 flex-1")}
+                />
+                <label htmlFor="rental-unit" className="sr-only">
+                  Charged
+                </label>
+                <select
+                  id="rental-unit"
+                  value={offer.rentalUnit}
+                  onChange={(e) => set("rentalUnit", e.target.value as RentalUnit)}
+                  className={cn(inputClass, "w-32 shrink-0")}
+                >
+                  {(Object.keys(UNIT_LABELS) as RentalUnit[]).map((u) => (
+                    <option key={u} value={u}>
+                      {UNIT_LABELS[u]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Field>
+            <Field label="Rental notes" htmlFor="rental-notes" hint="Optional. Shown on the website, e.g. driver, deposit, minimum days.">
+              <textarea
+                id="rental-notes"
+                rows={2}
+                maxLength={500}
+                value={offer.rentalNotes}
+                onChange={(e) => set("rentalNotes", e.target.value)}
+                placeholder="e.g. Comes with a driver. GH₵2,000 refundable deposit."
+                className={textareaClass}
+              />
+            </Field>
+          </div>
+        )}
+      </div>
+
+      {!offer.forSale && !offer.forRent && (
+        <p className="text-sm text-amber-800">Tick at least one to publish it.</p>
+      )}
+    </fieldset>
   )
 }
 
