@@ -3,6 +3,13 @@ import { cn } from "@/lib/utils"
 export const inputClass =
   "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:opacity-50 aria-invalid:border-destructive"
 
+// Native select with our own chevron, so the arrow sits inside the padding
+// instead of against the edge
+export const selectClass = cn(
+  inputClass,
+  "select-chevron cursor-pointer appearance-none pr-9",
+)
+
 export const textareaClass =
   "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
 

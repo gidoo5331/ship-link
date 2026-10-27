@@ -2,31 +2,20 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { ImageIcon, ListTree, Plus, Search } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { ImageIcon, LayoutGrid, Plus, Rows3, Search } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge, inputClass } from "@/components/form"
 import { LoadError, ProductCardSkeleton, RefreshButton, SkeletonGroup } from "@/components/load-state"
-import { CategoriesManager } from "@/components/products/categories-manager"
+import { ActiveFilterChips, ProductFiltersButton, type ProductFilterValues } from "@/components/products/product-filters"
 import { ProductStatusBadge } from "@/components/products/status"
 import { api, ApiError } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
-import { formatMoney, formatRentalRate, ghsEstimate } from "@/lib/format"
+import { formatMoney, formatRentalRate, ghsEstimate, timeAgo } from "@/lib/format"
 import type { Category, Paginated, Product } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const STATUS_FILTERS = [
-  { value: "", label: "Published and drafts" },
-  { value: "PUBLISHED", label: "Published" },
-  { value: "DRAFT", label: "Drafts" },
-  { value: "ARCHIVED", label: "Archived" },
-]
-
-const LISTING_FILTERS = [
-  { value: "", label: "Sale and rent" },
-  { value: "sale", label: "For sale" },
-  { value: "rent", label: "For rent" },
-]
+const VIEW_KEY = "shiplink.productsView"
 
 // The top bar searches by navigating to /products?search=…
 export default function ProductsPage() {
@@ -37,26 +26,47 @@ export default function ProductsPage() {
   )
 }
 
+// The category lives in the URL (?category=…) so the sidebar's category
+// links and the tabs here stay in step.
 function ProductsRoute() {
-  const search = useSearchParams().get("search") ?? ""
+  const params = useSearchParams()
+  const search = params.get("search") ?? ""
+  const category = params.get("category") || "all"
   // a new search from the top bar resets the view
-  return <ProductsView key={search} initialSearch={search} />
+  return <ProductsView key={search} initialSearch={search} tab={category} />
 }
 
-function ProductsView({ initialSearch }: { initialSearch: string }) {
+function ProductsView({ initialSearch, tab }: { initialSearch: string; tab: string }) {
   const { user } = useAuth()
+  const router = useRouter()
+  const params = useSearchParams()
   const rentalsEnabled = !!user?.company?.rentalsEnabled
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Paginated<Product> | null>(null)
-  const [tab, setTab] = useState<string>("all")
   const [status, setStatus] = useState("")
   const [listing, setListing] = useState("")
   const [search, setSearch] = useState(initialSearch)
-  const [manageOpen, setManageOpen] = useState(false)
   const [error, setError] = useState<string | null>(null) // failed actions, e.g. publish
   const [loadError, setLoadError] = useState<string | null>(null) // the list itself failed to load
   const [loading, setLoading] = useState(true)
   const [publishing, setPublishing] = useState<string | null>(null)
+  const [view, setView] = useState<"grid" | "table">(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "table" ? "table" : "grid"
+    } catch {
+      return "grid"
+    }
+  })
+
+  // remembered per browser
+  function changeView(next: "grid" | "table") {
+    setView(next)
+    try {
+      localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      // storage blocked: the choice lasts until reload
+    }
+  }
 
   const loadCategories = useCallback(
     () => api<Category[]>("GET", companyPath(user, "/categories")).then(setCategories),
@@ -91,6 +101,25 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
     return () => clearTimeout(t)
   }, [loadProducts])
 
+  function selectTab(id: string) {
+    const next = new URLSearchParams(params)
+    if (id === "all") next.delete("category")
+    else next.set("category", id)
+    const qs = next.toString()
+    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false })
+  }
+
+  const filterProps = {
+    values: { category: tab, status, listing },
+    categories,
+    rentalsEnabled,
+    onChange: (patch: Partial<ProductFilterValues>) => {
+      if (patch.category !== undefined) selectTab(patch.category)
+      if (patch.status !== undefined) setStatus(patch.status)
+      if (patch.listing !== undefined) setListing(patch.listing)
+    },
+  }
+
   const refresh = () => {
     setError(null)
     loadCategories().catch(() => {})
@@ -109,12 +138,6 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
     }
   }
 
-  const tabs = [
-    { id: "all", label: "All" },
-    ...categories.map((c) => ({ id: c.id, label: c.name, count: c.productCount })),
-    { id: "none", label: "Uncategorised" },
-  ]
-
   return (
     <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 p-6 md:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -122,18 +145,8 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
           <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
           <p className="text-sm text-muted-foreground">Your catalog. Only published products appear on your website.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-10"
-            aria-expanded={manageOpen}
-            aria-controls="categories-manager"
-            onClick={() => setManageOpen((o) => !o)}
-          >
-            <ListTree aria-hidden />
-            Manage categories
-          </Button>
+        <div className="flex gap-2">
+          <RefreshButton onClick={refresh} busy={loading} label="Refresh products" />
           <Link href="/products/new" className={cn(buttonVariants({ size: "lg" }), "h-10 px-4")}>
             <Plus aria-hidden />
             Add product
@@ -141,38 +154,11 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
         </div>
       </div>
 
-      {manageOpen && (
-        <CategoriesManager
-          basePath={companyPath(user, "/categories")}
-          categories={categories}
-          onChanged={async () => {
-            await loadCategories()
-            await loadProducts()
-          }}
-          onClose={() => setManageOpen(false)}
-        />
-      )}
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              aria-pressed={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "flex h-8 items-center gap-2 rounded-lg px-3 text-sm",
-                tab === t.id ? "bg-background font-medium shadow-sm" : "text-neutral-700",
-              )}
-            >
-              {t.label}
-              {"count" in t && <span className="text-xs text-muted-foreground">{t.count}</span>}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative w-60 max-w-full">
+      {/* categories are also listed under Products in the sidebar; the Filters
+          panel covers phones (sidebar behind the menu) and "Uncategorised" */}
+      <div className="flex flex-col gap-3">
+        <div className="flex w-full flex-wrap gap-2">
+          <div className="relative min-w-60 max-w-sm flex-1">
             <label htmlFor="product-search" className="sr-only">
               Search products
             </label>
@@ -186,32 +172,32 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
               className={cn(inputClass, "pl-9")}
             />
           </div>
-          <label htmlFor="status-filter" className="sr-only">
-            Status
-          </label>
-          <select id="status-filter" value={status} onChange={(e) => setStatus(e.target.value)} className={cn(inputClass, "w-auto")}>
-            {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
+          <ProductFiltersButton {...filterProps} />
+          <div role="group" aria-label="View" className="hidden rounded-lg border p-0.5 md:flex">
+            {(
+              [
+                { value: "grid", label: "Grid view", icon: LayoutGrid },
+                { value: "table", label: "Table view", icon: Rows3 },
+              ] as const
+            ).map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={view === value}
+                aria-label={label}
+                title={label}
+                onClick={() => changeView(value)}
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-md",
+                  view === value ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4" aria-hidden />
+              </button>
             ))}
-          </select>
-          {rentalsEnabled && (
-            <>
-              <label htmlFor="listing-filter" className="sr-only">
-                Sale or rent
-              </label>
-              <select id="listing-filter" value={listing} onChange={(e) => setListing(e.target.value)} className={cn(inputClass, "w-auto")}>
-                {LISTING_FILTERS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-          <RefreshButton onClick={refresh} busy={loading} label="Refresh products" />
+          </div>
         </div>
+        <ActiveFilterChips {...filterProps} />
       </div>
 
       {error && (
@@ -251,16 +237,15 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-          {products.items.map((p) => {
-            const cover = p.images[0]?.url
-            const canPublish = p.status === "DRAFT" && p.publishChecklist.length === 0
-            return (
+        <>
+          {/* phones always get the grid; the table needs the width */}
+          <div className={cn("grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4", view === "table" && "md:hidden")}>
+            {products.items.map((p) => (
               <article key={p.id} className="flex flex-col overflow-hidden rounded-xl border">
                 <div className="relative flex h-44 items-center justify-center bg-muted text-muted-foreground">
-                  {cover ? (
+                  {p.images[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element -- R2 URLs are already sized; no image optimizer needed in the portal
-                    <img src={cover} alt="" className="size-full object-cover" />
+                    <img src={p.images[0].url} alt="" className="size-full object-cover" />
                   ) : (
                     <span className="flex flex-col items-center gap-1.5 text-xs">
                       <ImageIcon className="size-7" aria-hidden />
@@ -281,60 +266,149 @@ function ProductsView({ initialSearch }: { initialSearch: string }) {
                     </span>
                     <h2 className="text-[15px] font-semibold leading-snug">{p.name}</h2>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    {/* rent-only products have no sale price to show */}
-                    {(!rentalsEnabled || p.forSale) && (
-                      <div className="flex items-baseline gap-2">
-                        {p.price !== null ? (
-                          <>
-                            <span className="font-semibold tabular-nums">{formatMoney(p.price, p.currency)}</span>
-                            {ghsEstimate(p.price, p.currency) && (
-                              <span className="text-xs tabular-nums text-muted-foreground">≈ {ghsEstimate(p.price, p.currency)}</span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">No price yet</span>
-                        )}
-                      </div>
-                    )}
-                    {rentalsEnabled && p.rental && (
-                      <span className="text-sm tabular-nums">
-                        <span className="text-muted-foreground">Rent </span>
-                        <span className="font-semibold">{formatRentalRate(p.rental)}</span>
-                      </span>
-                    )}
-                  </div>
+                  <PriceLines product={p} rentalsEnabled={rentalsEnabled} />
                   <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2.5">
-                    <span className="text-xs text-muted-foreground">
-                      {p.status === "PUBLISHED"
-                        ? "On your website"
-                        : p.status === "ARCHIVED"
-                          ? "Archived"
-                          : canPublish
-                            ? "Ready to publish"
-                            : `Needs: ${p.publishChecklist.map((k) => (k === "offer" ? "sale or rent" : k)).join(", ")}`}
-                    </span>
-                    <div className="flex gap-1.5">
-                      <Link href={`/products/${p.id}`} className={buttonVariants({ variant: "outline" })}>
-                        Edit
-                      </Link>
-                      {canPublish && (
-                        <Button disabled={publishing === p.id} onClick={() => publish(p)}>
-                          {publishing === p.id ? "Publishing…" : "Publish"}
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-xs text-muted-foreground">{websiteNote(p)}</span>
+                    <ProductActions product={p} publishing={publishing} onPublish={publish} />
                   </div>
                 </div>
               </article>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+
+          {view === "table" && (
+            <div className="hidden overflow-hidden rounded-xl border md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+                  <tr>
+                    <th scope="col" className="px-4 py-2.5 font-medium">
+                      Product
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 font-medium">
+                      Price
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 font-medium">
+                      Status
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 font-medium">
+                      Updated
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 text-right font-medium">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {products.items.map((p) => (
+                    <tr key={p.id} className="align-middle hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
+                            {p.images[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- storage thumbnail
+                              <img src={p.images[0].url} alt="" className="size-full object-cover" />
+                            ) : (
+                              <ImageIcon className="size-4" aria-label="No photos yet" />
+                            )}
+                          </span>
+                          <span className="flex min-w-0 flex-col">
+                            <Link href={`/products/${p.id}`} className="font-semibold leading-snug hover:underline">
+                              {p.name}
+                            </Link>
+                            <span className="text-xs text-muted-foreground">{p.category?.name ?? "Uncategorised"}</span>
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <PriceLines product={p} rentalsEnabled={rentalsEnabled} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="flex flex-wrap gap-1.5">
+                            <ProductStatusBadge product={p} />
+                            {rentalsEnabled && p.rental && <Badge tone="amber">{p.forSale ? "Sale & rent" : "For rent"}</Badge>}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{websiteNote(p)}</span>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{timeAgo(p.updatedAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end">
+                          <ProductActions product={p} publishing={publishing} onPublish={publish} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
       {products && products.total > products.items.length && (
         <p className="text-sm text-muted-foreground">
           Showing {products.items.length} of {products.total}. Narrow the list with search or filters.
         </p>
+      )}
+    </div>
+  )
+}
+
+// "On your website", "Ready to publish" or what's still missing
+function websiteNote(p: Product) {
+  if (p.status === "PUBLISHED") return "On your website"
+  if (p.status === "ARCHIVED") return "Archived"
+  if (p.publishChecklist.length === 0) return "Ready to publish"
+  return `Needs: ${p.publishChecklist.map((k) => (k === "offer" ? "sale or rent" : k)).join(", ")}`
+}
+
+function PriceLines({ product: p, rentalsEnabled }: { product: Product; rentalsEnabled: boolean }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {/* rent-only products have no sale price to show */}
+      {(!rentalsEnabled || p.forSale) && (
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          {p.price !== null ? (
+            <>
+              <span className="font-semibold tabular-nums">{formatMoney(p.price, p.currency)}</span>
+              {ghsEstimate(p.price, p.currency) && (
+                <span className="text-xs tabular-nums text-muted-foreground">≈ {ghsEstimate(p.price, p.currency)}</span>
+              )}
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">No price yet</span>
+          )}
+        </div>
+      )}
+      {rentalsEnabled && p.rental && (
+        <span className="text-sm tabular-nums">
+          <span className="text-muted-foreground">Rent </span>
+          <span className="font-semibold">{formatRentalRate(p.rental)}</span>
+        </span>
+      )}
+    </div>
+  )
+}
+
+function ProductActions({
+  product: p,
+  publishing,
+  onPublish,
+}: {
+  product: Product
+  publishing: string | null
+  onPublish: (p: Product) => void
+}) {
+  const canPublish = p.status === "DRAFT" && p.publishChecklist.length === 0
+  return (
+    <div className="flex gap-1.5">
+      <Link href={`/products/${p.id}`} className={buttonVariants({ variant: "outline" })} aria-label={`Edit ${p.name}`}>
+        Edit
+      </Link>
+      {canPublish && (
+        <Button disabled={publishing === p.id} onClick={() => onPublish(p)}>
+          {publishing === p.id ? "Publishing…" : "Publish"}
+        </Button>
       )}
     </div>
   )

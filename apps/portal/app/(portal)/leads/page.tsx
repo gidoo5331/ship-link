@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, ImageOff, MessageCircle, Phone, Search } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Badge, inputClass, textareaClass } from "@/components/form"
+import { Badge, inputClass, selectClass, textareaClass } from "@/components/form"
 import { ConvertLeadModal } from "@/components/leads/convert-lead-modal"
 import { LoadError, Loading, RefreshButton, RowSkeleton, SkeletonGroup } from "@/components/load-state"
 import { api, ApiError } from "@/lib/api"
@@ -146,7 +146,7 @@ function LeadsView() {
               <label htmlFor="lead-type" className="sr-only">
                 Buying or renting
               </label>
-              <select id="lead-type" value={type} onChange={(e) => setType(e.target.value as LeadType | "")} className={cn(inputClass, "w-auto")}>
+              <select id="lead-type" value={type} onChange={(e) => setType(e.target.value as LeadType | "")} className={cn(selectClass, "w-auto")}>
                 <option value="">Buying and renting</option>
                 <option value="PURCHASE">Buying</option>
                 <option value="RENTAL">Renting</option>

@@ -5,7 +5,7 @@
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Field, inputClass, textareaClass } from "@/components/form"
+import { Field, inputClass, selectClass, textareaClass } from "@/components/form"
 import { AVAILABILITY_LABELS } from "@/components/products/status"
 import { ghsEstimate } from "@/lib/format"
 import type { Category, Product, ProductAvailability, ProductSpec, RentalUnit } from "@/lib/types"
@@ -44,14 +44,14 @@ export function CategoryField({
     <Field
       label="Category"
       htmlFor="category"
-      hint={categories?.length === 0 ? "No categories yet. Add them from Products → Manage categories." : hint}
+      hint={categories?.length === 0 ? "No categories yet. Add them from Products → Categories in the menu." : hint}
     >
       <select
         id="category"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={categories === null}
-        className={inputClass}
+        className={selectClass}
       >
         <option value="">{categories === null ? "Loading…" : "No category"}</option>
         {categories?.map((c) => (
@@ -92,7 +92,7 @@ export function PriceField({
         <label htmlFor="currency" className="sr-only">
           Currency
         </label>
-        <select id="currency" value={currency} onChange={(e) => onCurrencyChange(e.target.value)} className={cn(inputClass, "w-24 shrink-0")}>
+        <select id="currency" value={currency} onChange={(e) => onCurrencyChange(e.target.value)} className={cn(selectClass, "w-24 shrink-0")}>
           <option>USD</option>
           <option>GHS</option>
         </select>
@@ -221,7 +221,7 @@ export function OfferField({
                   id="rental-currency"
                   value={offer.rentalCurrency}
                   onChange={(e) => set("rentalCurrency", e.target.value)}
-                  className={cn(inputClass, "w-24 shrink-0")}
+                  className={cn(selectClass, "w-24 shrink-0")}
                 >
                   <option>GHS</option>
                   <option>USD</option>
@@ -242,7 +242,7 @@ export function OfferField({
                   id="rental-unit"
                   value={offer.rentalUnit}
                   onChange={(e) => set("rentalUnit", e.target.value as RentalUnit)}
-                  className={cn(inputClass, "w-32 shrink-0")}
+                  className={cn(selectClass, "w-32 shrink-0")}
                 >
                   {(Object.keys(UNIT_LABELS) as RentalUnit[]).map((u) => (
                     <option key={u} value={u}>
