@@ -13,7 +13,7 @@ Instance-specific values (public URL, Neon project ID) are in `docs/deployment.l
 | Backend API | NestJS (Node 22) + Prisma | **Northflank** (managed cloud) | Developer Sandbox (free) |
 | Database | PostgreSQL 18 | **Neon** (serverless Postgres) | Free plan |
 | Frontend | Next.js | **Vercel** (planned / in progress) | Hobby (free) |
-| File storage | — | Not set up yet (options: Neon Object storage or Cloudflare R2) | — |
+| File storage | S3-compatible object storage | **Cloudflare R2** (chosen, not set up yet) | Free tier (10 GB, no egress fees) |
 
 - **Repo:** `gidoo5331/ship-link` (GitHub, **monorepo**)
 - **Backend lives in:** `/backend`
@@ -103,11 +103,51 @@ Set in Northflank → Service → **Environment → Runtime variables**. Restart
 | `DIRECT_URL` | Neon **direct** connection string (`?sslmode=require`) |
 | `JWT_SECRET` | Auth signing secret |
 | `NODE_ENV` | `production` |
-| `CORS_ORIGINS` | Comma-separated allowed frontend origins (e.g. the Vercel URL) |
+| `CORS_ORIGINS` | Comma-separated allowed frontend origins: the **portal** and the **website** (the website's lead forms post straight from the browser) |
 | `NODE_OPTIONS` | `--max-old-space-size=200` (keeps Node under 256 MB) |
+| `R2_ACCOUNT_ID` | Cloudflare account ID (R2 → Overview) |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | R2 API token scoped to the bucket (Object Read & Write) |
+| `R2_BUCKET` | Bucket name for product photos |
+| `R2_PUBLIC_URL` | Public URL photos are served from (`https://pub-….r2.dev` or a custom domain), no trailing slash |
 | *(others)* | Any other keys from local `backend/.env` |
 
 Northflank also injects `NF_*` variables automatically (e.g. `NF_REGION`, `NF_HOSTS`) — don't override them.
+Without the `R2_*` variables the API still runs; photo uploads return 503.
+
+### Frontends (Vercel)
+
+| App | Variable | Value |
+|---|---|---|
+| Portal (`apps/portal`) | `NEXT_PUBLIC_API_URL` | API base URL ending in `/api/v1` (build-time: redeploy after changing) |
+| Website (`apps/website`) | `SHIPLINK_API_URL` | API base URL ending in `/api/v1` |
+| Website (`apps/website`) | `COMPANY_SUBDOMAIN` | The company whose catalog the site shows (e.g. `gh-motors`). Unset = bundled sample data |
+
+The website fetches the catalog at build time and refreshes it every 60 s, so the API must be reachable when Vercel builds it.
+
+### Creating a company login
+
+Company sign-up doesn't deliver the temporary password yet, so create companies with the script:
+
+```bash
+# from your machine, against whatever DATABASE_URL backend/.env points to (it shows the host and asks first)
+cd backend && yarn create:company-admin --company "GH Motors" --email ama@ghmotors.com --first-name Ama --last-name Mensah
+
+# or in Northflank → Service → Shell (uses the production env vars)
+node dist/scripts/create-company-admin --company "GH Motors" --email ama@ghmotors.com --first-name Ama --last-name Mensah
+```
+
+Optional: `--subdomain`, `--password` (otherwise one is generated and printed once), `--phone`, `--yes` (skip the prompt).
+
+### R2 setup (one time)
+
+1. Cloudflare → R2 → **Create bucket** (e.g. `shiplink-media`).
+2. Bucket → Settings → **Public access**: enable the `r2.dev` URL (or connect a custom domain) → that's `R2_PUBLIC_URL`.
+3. Bucket → Settings → **CORS policy** — browsers upload straight to R2, so allow the portal origin to `PUT`:
+   ```json
+   [{ "AllowedOrigins": ["https://<portal-domain>", "http://localhost:3000"],
+      "AllowedMethods": ["PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+   ```
+4. R2 → **Manage API tokens** → create a token with *Object Read & Write* on this bucket only → access key + secret.
 
 
 ---

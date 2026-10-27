@@ -32,6 +32,41 @@ enum VerificationStatus {
   FAILED
 }
 
+// Is the product on the company website? Only an explicit publish moves it to PUBLISHED.
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// A website enquiry, from first contact to outcome
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED // became (or was linked to) a customer
+  CLOSED    // not interested, spam, duplicate…
+}
+
+// What customers see once a product is published
+enum ProductAvailability {
+  AVAILABLE  // in stock / already sourced
+  ON_REQUEST // imported to order, shown with leadTime
+  SOLD       // hidden from listings, link still resolves
+}
+
+// What a rental rate is per
+enum RentalUnit {
+  DAY
+  WEEK
+  MONTH
+}
+
+// Buying something, or renting it (only for companies with rentals on)
+enum LeadType {
+  PURCHASE
+  RENTAL
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 // Dynamic role created by company admin or staff with roles:manage permission
@@ -92,14 +127,122 @@ model Company {
   phone        String?
   address      String?
   logoUrl      String?
+  // public website content, edited in the portal's Settings
+  whatsapp       String?   // digits only with country code, e.g. 233240000000
+  tagline        String?
+  heroHeading    String?
+  heroSubheading String?
+  about          String?
+  // turns on renting products out: rental prices in the portal, rentals on the website
+  rentalsEnabled Boolean   @default(false)
   users        User[]
   agents       Agent[]
   customers    Customer[]
   roles        Role[]
+  categories   Category[]
+  products     Product[]
+  leads        Lead[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   @@map("companies")
+}
+
+// "I'm interested" from the website, or a request for something not listed.
+// Kept separate from Customer so enquiries never clutter the customer list;
+// converting a lead creates or links a Customer.
+model Lead {
+  id            String     @id @default(uuid())
+  companyId     String
+  company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type          LeadType   @default(PURCHASE)
+  fullName      String
+  phone         String     // as typed
+  phoneKey      String     // normalised for matching, e.g. 233245550133
+  location      String?
+  productId     String?    // null = custom request
+  product       Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName   String?    // snapshot, survives product edits/deletes
+  customRequest String?
+  referralCode  String?    // as typed on the form
+  agentId       String?    // set when referralCode matches an agent
+  agent         Agent?     @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  status        LeadStatus @default(NEW)
+  notes         String?
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contactedAt   DateTime?
+  closedAt      DateTime?
+  convertedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([companyId, status, createdAt])
+  @@index([companyId, phoneKey])
+  @@map("leads")
+}
+
+// Company-defined product grouping (e.g. "Cars", "Generators", "Perfumes")
+model Category {
+  id           String    @id @default(uuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  sortOrder    Int       @default(0)
+  specTemplate String[]  // spec labels pre-filled on new products, e.g. ["Make", "Model", "Year"]
+  products     Product[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([companyId, slug])
+  @@map("categories")
+}
+
+model Product {
+  id           String              @id @default(uuid())
+  companyId    String
+  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  categoryId   String?
+  category     Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  slug         String
+  name         String
+  description  String?
+  price        Decimal?            @db.Decimal(12, 2)
+  currency     String              @default("USD")
+  status       ProductStatus       @default(DRAFT)
+  availability ProductAvailability @default(AVAILABLE)
+  leadTime     String?             // e.g. "4–6 weeks", shown for ON_REQUEST
+  forSale      Boolean             @default(true) // false = rent only
+  rental       ProductRental?      // present = also for rent
+  images       String[]            // storage keys, first = cover
+  specs        Json                @default("[]") // [{ "label": "Mileage", "value": "38,000 mi" }]
+  features     String[]
+  publishedAt  DateTime?
+  createdById  String?
+  leads        Lead[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([companyId, slug])
+  @@index([companyId, status, categoryId])
+  @@map("products")
+}
+
+// A product that can be rented out, and its rate. Kept out of Product so items
+// that are only sold carry no rental fields. Dates, deposits and drivers are
+// agreed with the customer directly; `notes` holds anything to say upfront.
+model ProductRental {
+  productId String     @id
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rate      Decimal    @db.Decimal(12, 2)
+  currency  String     @default("GHS") // rentals are usually priced locally, unlike imports
+  unit      RentalUnit @default(DAY)
+  notes     String?    // e.g. "With driver. GH₵2,000 refundable deposit."
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("product_rentals")
 }
 
 model Agent {
@@ -116,6 +259,7 @@ model Agent {
   trustScore         Float              @default(5.0)
   verificationStatus VerificationStatus @default(PENDING)
   isAvailable        Boolean            @default(true)
+  leads              Lead[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -130,14 +274,19 @@ model Customer {
   firstName       String
   lastName        String
   phone           String
-  email           String?  @unique
+  phoneKey        String?  // normalised for duplicate checks, e.g. 233245550133
+  email           String?  // unique per company, not platform-wide
   password    String?  // null until/unless customer self-registers
   ghanaCardNumber String?
   address         String?
   region          String?
   city            String?
+  notes           String?
+  leads           Lead[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@unique([companyId, email])
+  @@index([companyId, phoneKey])
   @@map("customers")
 }

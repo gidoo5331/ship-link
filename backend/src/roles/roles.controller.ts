@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard, PermissionsGuard } from 'src/auth/guard';
+import { CompanyScopeGuard, JwtAuthGuard, PermissionsGuard } from 'src/auth/guard';
 import { RolesService } from './roles.service';
 import { GetUser, RequirePermissions } from 'src/auth/decorator';
 import type { User } from 'generated/prisma/client';
@@ -18,8 +18,7 @@ import { AssignRoleDto, CreateRoleDto, UpdateRoleDto } from './dto';
 
 @ApiTags('Roles')
 @ApiBearerAuth()
-// @UseGuards(JwtAuthGuard, CompanyScopeGuard, PermissionsGuard)
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, CompanyScopeGuard, PermissionsGuard)
 @Controller('companies/:companyId/roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
