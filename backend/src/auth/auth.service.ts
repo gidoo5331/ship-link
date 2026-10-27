@@ -54,7 +54,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where:{
         email: dto.email
-      }
+      },
+      include: {
+        company: { select: { id: true, name: true, subdomain: true, logoUrl: true, rentalsEnabled: true } },
+      },
     })
 
     // if user does not exist throw exception
@@ -65,6 +68,9 @@ export class AuthService {
       
       // if password incorrect throw exception
       if (!pwMatches) throw new ForbiddenException("Credentials incorrect")
+
+    // deactivated accounts can't sign in (checked after the password so it doesn't reveal which emails exist)
+    if (!user.isActive) throw new ForbiddenException("This account has been deactivated. Ask your company admin.")
 
     // Send user and token
     const { password, ...safeUser } = user; // remove password from the returned user object
@@ -79,7 +85,7 @@ async signToken(userId: string, email: string, systemRole: string ): Promise<{ a
     const payload = { sub: userId, email, systemRole };
     const secret = this.config.get('JWT_SECRET');
     const token = await this.jwt.signAsync(payload, {
-      expiresIn: '15m',
+      expiresIn: '12h',
       secret: secret
     });
     return { access_token : token };

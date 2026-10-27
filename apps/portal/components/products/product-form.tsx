@@ -10,6 +10,11 @@ import {
   AvailabilityField,
   CategoryField,
   FeaturesField,
+  OfferField,
+  offerError,
+  offerFrom,
+  offerPayload,
+  type OfferState,
   parsePrice,
   PriceField,
   SpecsField,
@@ -32,10 +37,12 @@ type FormState = {
   leadTime: string
   specs: ProductSpec[]
   features: string[]
+  offer: OfferState
 }
 
 function toForm(p: Product): FormState {
   return {
+    offer: offerFrom(p),
     name: p.name,
     categoryId: p.categoryId ?? "",
     price: p.price != null ? String(p.price) : "",
@@ -48,9 +55,12 @@ function toForm(p: Product): FormState {
   }
 }
 
-export function toProductPayload(f: Omit<FormState, "name"> & { name?: string }) {
+// Sale/rental settings are only sent while rentals are on, so turning rentals
+// off in Settings never wipes a product's rental details.
+export function toProductPayload(f: Omit<FormState, "name"> & { name?: string }, rentalsEnabled: boolean) {
   return {
     ...(f.name !== undefined && { name: f.name.trim() }),
+    ...(rentalsEnabled && offerPayload(f.offer)),
     categoryId: f.categoryId || null,
     price: parsePrice(f.price),
     currency: f.currency,
@@ -82,6 +92,7 @@ export function ProductForm({ product: initial }: { product: Product }) {
   const [busy, setBusy] = useState<null | "save" | "publish" | "unpublish" | "archive" | "delete">(null)
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
 
+  const rentalsEnabled = !!user?.company?.rentalsEnabled
   const productPath = companyPath(user, `/products/${product.id}`)
   const dirty = JSON.stringify(form) !== JSON.stringify(saved)
   const published = product.status === "PUBLISHED"
@@ -105,10 +116,14 @@ export function ProductForm({ product: initial }: { product: Product }) {
     const missing: string[] = []
     if (!product.images.length) missing.push("photo")
     if (!form.categoryId) missing.push("category")
-    if (form.price.trim() === "") missing.push("price")
+    const forSale = !rentalsEnabled || form.offer.forSale
+    if (rentalsEnabled && !form.offer.forSale && !form.offer.forRent) missing.push("offer")
+    if (forSale && form.price.trim() === "") missing.push("price")
     if (!form.description.trim()) missing.push("description")
     return missing
-  }, [form, product])
+  }, [form, product, rentalsEnabled])
+
+  const checklistKeys = publishChecklistKeys(rentalsEnabled, !rentalsEnabled || form.offer.forSale)
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -127,9 +142,14 @@ export function ProductForm({ product: initial }: { product: Product }) {
       setMessage({ text: "Give the product a name.", error: true })
       return null
     }
-    const payload = toProductPayload(form)
+    const payload = toProductPayload(form, rentalsEnabled)
     if (payload.price !== null && Number.isNaN(payload.price)) {
       setMessage({ text: "Price must be a number.", error: true })
+      return null
+    }
+    const rentalError = rentalsEnabled ? offerError(form.offer) : null
+    if (rentalError) {
+      setMessage({ text: rentalError, error: true })
       return null
     }
     const next = await api<Product>("PATCH", productPath, payload)
@@ -249,12 +269,14 @@ export function ProductForm({ product: initial }: { product: Product }) {
                 <input id="name" value={form.name} onChange={(e) => set("name", e.target.value)} className={inputClass} />
               </Field>
               <CategoryField categories={categories} value={form.categoryId} onChange={changeCategory} />
-              <PriceField
-                price={form.price}
-                currency={form.currency}
-                onPriceChange={(v) => set("price", v)}
-                onCurrencyChange={(v) => set("currency", v)}
-              />
+              {!rentalsEnabled && (
+                <PriceField
+                  price={form.price}
+                  currency={form.currency}
+                  onPriceChange={(v) => set("price", v)}
+                  onCurrencyChange={(v) => set("currency", v)}
+                />
+              )}
               <Field label="Description" htmlFor="description" className="sm:col-span-2">
                 <textarea
                   id="description"
@@ -266,6 +288,25 @@ export function ProductForm({ product: initial }: { product: Product }) {
               </Field>
             </div>
           </Card>
+
+          {rentalsEnabled && (
+            <Card aria-labelledby="offer-h" className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1">
+                <h2 id="offer-h" className="text-base font-semibold">
+                  Sale and rental
+                </h2>
+                <p className="text-sm text-muted-foreground">Tick both if customers can buy or rent it.</p>
+              </div>
+              <OfferField
+                offer={form.offer}
+                onChange={(v) => set("offer", v)}
+                price={form.price}
+                currency={form.currency}
+                onPriceChange={(v) => set("price", v)}
+                onCurrencyChange={(v) => set("currency", v)}
+              />
+            </Card>
+          )}
 
           <Card aria-labelledby="specs-h" className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1">
@@ -297,7 +338,7 @@ export function ProductForm({ product: initial }: { product: Product }) {
                   : "Live on your website."
                 : "Only your team can see this product. Customers see it after you publish."}
             </p>
-            {!published && <PublishChecklist missing={checklist} />}
+            {!published && <PublishChecklist keys={checklistKeys} missing={checklist} />}
           </Card>
 
           <Card aria-labelledby="availability-h" className="flex flex-col gap-3">
@@ -331,10 +372,25 @@ export function ProductForm({ product: initial }: { product: Product }) {
   )
 }
 
-export function PublishChecklist({ missing, renderAction }: { missing: string[]; renderAction?: (key: string) => React.ReactNode }) {
+// The checklist items that apply: "offer" only when the company rents,
+// "price" only when the product is for sale
+export function publishChecklistKeys(rentalsEnabled: boolean, forSale: boolean) {
+  return Object.keys(CHECKLIST_LABELS).filter((k) => (k === "offer" ? rentalsEnabled : k === "price" ? forSale : true))
+}
+
+export function PublishChecklist({
+  keys,
+  missing,
+  renderAction,
+}: {
+  keys: string[]
+  missing: string[]
+  renderAction?: (key: string) => React.ReactNode
+}) {
   return (
     <ul aria-label="Ready to publish" className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
-      {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
+      {keys.map((key) => {
+        const label = CHECKLIST_LABELS[key]
         const done = !missing.includes(key)
         return (
           <li key={key} className="flex items-center gap-2 text-sm">

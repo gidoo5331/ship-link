@@ -7,6 +7,8 @@ import { inputClass } from "@/components/form"
 import { api, ApiError } from "@/lib/api"
 import type { Category } from "@/lib/types"
 
+export const CATEGORIES_CHANGED = "shiplink:categories-changed"
+
 const splitSpecs = (text: string) =>
   text
     .split(",")
@@ -22,7 +24,7 @@ export function CategoriesManager({
   basePath: string // e.g. /companies/:id/categories
   categories: Category[]
   onChanged: () => Promise<void> | void
-  onClose: () => void
+  onClose?: () => void // panel mode: shows its own heading and a close button
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
@@ -38,6 +40,8 @@ export function CategoriesManager({
     try {
       await action()
       await onChanged()
+      // the sidebar lists categories too
+      window.dispatchEvent(new Event(CATEGORIES_CHANGED))
       if (success) setMessage({ text: success })
       return true
     } catch (e) {
@@ -72,20 +76,26 @@ export function CategoriesManager({
   }
 
   return (
-    <section id="categories-manager" aria-labelledby="categories-h" className="flex flex-col rounded-xl border bg-sidebar">
-      <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-5">
-        <div className="flex flex-col gap-1">
-          <h2 id="categories-h" className="text-base font-semibold">
-            Categories
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Group your products on the website. Spec fields are pre-filled when you add a product to a category.
-          </p>
+    <section
+      id="categories-manager"
+      {...(onClose ? { "aria-labelledby": "categories-h" } : { "aria-label": "Categories" })}
+      className={`flex flex-col rounded-xl border bg-sidebar ${onClose ? "" : "pt-5"}`}
+    >
+      {onClose && (
+        <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-5">
+          <div className="flex flex-col gap-1">
+            <h2 id="categories-h" className="text-base font-semibold">
+              Categories
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Group your products on the website. Spec fields are pre-filled when you add a product to a category.
+            </p>
+          </div>
+          <Button variant="outline" size="icon-lg" onClick={onClose} aria-label="Close categories">
+            <X aria-hidden />
+          </Button>
         </div>
-        <Button variant="outline" size="icon-lg" onClick={onClose} aria-label="Close categories">
-          <X aria-hidden />
-        </Button>
-      </div>
+      )}
 
       {categories.length === 0 ? (
         <div className="mx-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed bg-background p-4">

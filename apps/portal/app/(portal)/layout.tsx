@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
+import { Loading } from "@/components/load-state"
 import { Sidebar } from "@/components/sidebar"
 import { Topbar } from "@/components/topbar"
 import { useAuth } from "@/lib/auth"
@@ -18,8 +19,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground" role="status">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center">
+        <Loading />
       </div>
     )
   }

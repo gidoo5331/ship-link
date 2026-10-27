@@ -1,4 +1,6 @@
 export const RESOURCES = [
+  'products',
+  'leads',
   'shipments',
   'payments',
   'agents',

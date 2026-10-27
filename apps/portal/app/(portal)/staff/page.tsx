@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Check, Copy, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge, Field, inputClass } from "@/components/form"
+import { LoadError, RefreshButton, TableRowsSkeleton } from "@/components/load-state"
 import { Modal } from "@/components/modal"
 import { api, ApiError } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
@@ -39,16 +40,24 @@ export default function StaffPage() {
   const [credentials, setCredentials] = useState<Credentials | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const load = useCallback(
-    () =>
-      api<StaffMember[]>("GET", staffPath)
-        .then(setStaff)
-        .catch((e) => setError(e instanceof ApiError ? e.message : "Couldn't load your team.")),
-    [staffPath],
-  )
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
+  const load = useCallback(() => {
+    setLoading(true)
+    return api<StaffMember[]>("GET", staffPath)
+      .then((s) => {
+        setStaff(s)
+        setLoadError(null)
+      })
+      .catch((e) => setLoadError(e instanceof ApiError ? e.message : "Couldn't load your team."))
+      .finally(() => setLoading(false))
+  }, [staffPath])
+
+  // deferred so the loading state isn't set synchronously inside the effect
   useEffect(() => {
-    load()
+    const t = setTimeout(load, 0)
+    return () => clearTimeout(t)
   }, [load])
 
   async function addStaff(e: React.FormEvent) {
@@ -113,19 +122,30 @@ export default function StaffPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Staff</h1>
           <p className="text-sm text-muted-foreground">Who can sign in to your portal. Everyone you add gets full access.</p>
         </div>
-        <Button size="lg" className="h-10 px-4" onClick={() => setAddOpen(true)}>
-          <UserPlus aria-hidden />
-          Add staff
-        </Button>
+        <div className="flex gap-2">
+          <RefreshButton onClick={load} busy={loading} label="Refresh staff" />
+          <Button size="lg" className="h-10 px-4" onClick={() => setAddOpen(true)}>
+            <UserPlus aria-hidden />
+            Add staff
+          </Button>
+        </div>
       </div>
 
-      {error && (
+      {(error || (loadError && staff !== null)) && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
+          {error ?? `${loadError} Showing the last list we loaded.`}
         </p>
       )}
 
+      {staff === null && loadError ? (
+        <LoadError message={loadError} onRetry={load} retrying={loading} />
+      ) : (
       <div className="overflow-hidden rounded-xl border">
+        {staff === null && (
+          <span role="status" className="sr-only">
+            Loading your team…
+          </span>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -141,11 +161,7 @@ export default function StaffPage() {
             </thead>
             <tbody>
               {staff === null ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground" role="status">
-                    Loading…
-                  </td>
-                </tr>
+                <TableRowsSkeleton cols={5} rows={3} />
               ) : (
                 staff.map((m) => {
                   const isAdmin = m.systemRole === "COMPANY_ADMIN"
@@ -204,6 +220,7 @@ export default function StaffPage() {
           </table>
         </div>
       </div>
+      )}
 
       <Modal
         open={addOpen}

@@ -7,6 +7,7 @@ import { ProductForm } from "@/components/products/product-form"
 import { api, ApiError } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
 import type { Product } from "@/lib/types"
+import { Loading } from "@/components/load-state"
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>()
@@ -35,9 +36,7 @@ export default function EditProductPage() {
 
   if (!product) {
     return (
-      <p className="p-8 text-sm text-muted-foreground" role="status">
-        Loading product…
-      </p>
+      <Loading label="Loading product…" />
     )
   }
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { ExternalLink, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, Field, inputClass, textareaClass } from "@/components/form"
+import { LoadError, Loading } from "@/components/load-state"
 import { api, ApiError, uploadToPresignedUrl } from "@/lib/api"
 import { companyPath, useAuth } from "@/lib/auth"
 import { initials, websiteHost, websiteUrl } from "@/lib/format"
@@ -22,9 +23,12 @@ type Settings = {
   heroHeading: string | null
   heroSubheading: string | null
   about: string | null
+  rentalsEnabled: boolean
 }
 
-type Form = Record<"name" | "email" | "phone" | "whatsapp" | "address" | "tagline" | "heroHeading" | "heroSubheading" | "about", string>
+type Form = Record<"name" | "email" | "phone" | "whatsapp" | "address" | "tagline" | "heroHeading" | "heroSubheading" | "about", string> & {
+  rentalsEnabled: boolean
+}
 
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const LOGO_MAX_BYTES = 2 * 1024 * 1024
@@ -40,6 +44,7 @@ function toForm(s: Settings): Form {
     heroHeading: s.heroHeading ?? "",
     heroSubheading: s.heroSubheading ?? "",
     about: s.about ?? "",
+    rentalsEnabled: s.rentalsEnabled,
   }
 }
 
@@ -136,13 +141,9 @@ export default function SettingsPage() {
     return (
       <div className="p-8">
         {message?.error ? (
-          <p role="alert" className="text-sm text-red-700">
-            {message.text}
-          </p>
+          <LoadError message={message.text} onRetry={() => window.location.reload()} />
         ) : (
-          <p className="text-sm text-muted-foreground" role="status">
-            Loading settings…
-          </p>
+          <Loading label="Loading settings…" />
         )}
       </div>
     )
@@ -270,6 +271,42 @@ export default function SettingsPage() {
           <Field label="About your company" htmlFor="about" hint={`${form.about.length} / 2000`}>
             <textarea id="about" rows={6} value={form.about} onChange={set("about")} maxLength={2000} className={textareaClass} />
           </Field>
+        </Card>
+
+        <Card aria-labelledby="rentals-h" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex max-w-lg flex-col gap-1">
+              <h2 id="rentals-h" className="text-base font-semibold">
+                Rentals
+              </h2>
+              <p id="rentals-desc" className="text-sm text-muted-foreground">
+                Rent out some of your products as well as selling them. You can then set a rental rate on any product, and people can
+                enquire to rent it on your website. You agree dates and terms with them directly.
+              </p>
+            </div>
+            <label className="flex cursor-pointer items-center gap-3">
+              <span className="text-sm font-medium">{form.rentalsEnabled ? "On" : "Off"}</span>
+              <input
+                type="checkbox"
+                role="switch"
+                aria-labelledby="rentals-h"
+                aria-describedby="rentals-desc"
+                checked={form.rentalsEnabled}
+                onChange={(e) => setForm({ ...form, rentalsEnabled: e.target.checked })}
+                className="peer sr-only"
+              />
+              <span
+                aria-hidden
+                className="relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-primary peer-focus-visible:ring-3 peer-focus-visible:ring-ring/40 after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
+              />
+            </label>
+          </div>
+          {settings.rentalsEnabled && !form.rentalsEnabled && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Turning this off hides rental prices and rent-only products from your website. Their rental details are kept, so you can turn
+              it back on later.
+            </p>
+          )}
         </Card>
       </div>
     </form>
