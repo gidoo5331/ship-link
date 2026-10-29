@@ -1,18 +1,22 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { SnakeCaseInterceptor } from './shared';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // behind Northflank's proxy: use the visitor's IP (for rate limits), not the proxy's
+  app.set('trust proxy', 1);
 
   app.setGlobalPrefix('api/v1');
 
   // comma-separated list of allowed frontend origins, e.g. the Vercel URL
   const corsOrigins = (process.env.CORS_ORIGINS ?? '')
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean);
   app.enableCors({
     origin: corsOrigins.length

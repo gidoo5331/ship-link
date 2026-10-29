@@ -7,9 +7,13 @@ import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { CompanyModule } from './company/company.module';
 import { RolesModule } from './roles/roles.module';
+import { StorageModule } from './storage/storage.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { CustomersModule } from './customers/customers.module';
+import { LeadsModule } from './leads/leads.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, AuthModule, AdminModule, CompanyModule, RolesModule,],
+  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, StorageModule, AuthModule, AdminModule, CompanyModule, RolesModule, CatalogModule, CustomersModule, LeadsModule,],
   controllers: [AppController],
   providers: [AppService],
 })

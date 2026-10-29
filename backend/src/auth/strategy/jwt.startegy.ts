@@ -18,7 +18,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const user = await this.prisma.user.findUnique({
         where: {
             id: payload.sub
-        }
+        },
+        // the portal shows the company's name and website address
+        include: {
+            company: { select: { id: true, name: true, subdomain: true, logoUrl: true, rentalsEnabled: true } },
+        },
     })
     if (!user || !user.isActive) {
     throw new UnauthorizedException('Account is deactivated');
