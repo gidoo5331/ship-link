@@ -1,0 +1,45 @@
+{
+  "name": "Philips 100W LED Flood Light",
+  "available": true,
+  "category": "lighting",
+  "price": 180,
+  "description": "Bright, efficient, and built to last. The Philips 100W flood light replaces a 500W halogen with 10,000 lumens of crisp daylight output — perfect for compounds, shops, warehouses, and car parks.",
+  "images": [
+    "/images/products/philips-100w-led-flood-light/images/0.png",
+    "/images/products/philips-100w-led-flood-light/images/1.png",
+    "/images/products/philips-100w-led-flood-light/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "Wattage",
+      "value": "100W"
+    },
+    {
+      "label": "Lumen Output",
+      "value": "10,000 lm"
+    },
+    {
+      "label": "Colour Temperature",
+      "value": "6500K (Daylight)"
+    },
+    {
+      "label": "IP Rating",
+      "value": "IP66 Weatherproof"
+    },
+    {
+      "label": "Lifespan",
+      "value": "50,000 hrs"
+    },
+    {
+      "label": "Beam Angle",
+      "value": "120°"
+    }
+  ],
+  "features": [
+    "IP66 Weatherproof",
+    "Adjustable Mounting Bracket",
+    "No Warm-Up Time",
+    "Surge Protection",
+    "Wide Beam Coverage"
+  ]
+}

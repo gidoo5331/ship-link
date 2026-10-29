@@ -1,0 +1,26 @@
+{
+  "title": "2020 Honda CR-V",
+  "available": true,
+  "make": "Honda",
+  "model": "CR-V",
+  "year": "2020",
+  "price": 24000,
+  "mileage": 45000,
+  "engineSize": "1.5T",
+  "transmission": "Automatic",
+  "color": "Pearl White",
+  "condition": "Foreign Used",
+  "description": "A practical and reliable crossover perfect for city and highway driving. The CR-V's turbocharged engine delivers confident performance.",
+  "images": [
+    "/images/cars/2020-honda-cr-v/images/0.jpg",
+    "/images/cars/2020-honda-cr-v/images/1.jpg",
+    "/images/cars/2020-honda-cr-v/images/2.jpg"
+  ],
+  "features": [
+    "AWD",
+    "Honda Sensing Suite",
+    "Heated Seats",
+    "Power Tailgate",
+    "Android Auto"
+  ]
+}

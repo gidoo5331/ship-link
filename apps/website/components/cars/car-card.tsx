@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import type { Car } from "@/types"
-import { ArrowRight, Camera, Cog, Fuel, Gauge } from "lucide-react"
+import { Fuel, Gauge, ArrowRight, Camera } from "lucide-react"
 import { formatGHS, formatUSD } from "@/lib/currency"
 
 type Props = {
@@ -9,31 +10,30 @@ type Props = {
 }
 
 export default function CarCard({ car }: Props) {
-  const name = `${car.year} ${car.make} ${car.model}`
-  const specs = [
-    { icon: Gauge, label: `${car.mileage.toLocaleString("en-US")} km`, title: "Mileage" },
-    { icon: Fuel, label: car.engineSize, title: "Engine" },
-    { icon: Cog, label: car.transmission, title: "Transmission" },
-  ].filter((s) => s.label)
+  const formattedMileage = car.mileage.toLocaleString("en-US")
 
   return (
-    // The title link is stretched over the whole card, so the card is one tap target
-    <Card className="group relative gap-0 py-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+    <Card className="overflow-hidden py-0 transition-shadow hover:shadow-md">
+      <div className="relative h-48 w-full overflow-hidden bg-slate-100">
         {car.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={car.images[0]}
-            alt={name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            alt={`${car.year} ${car.make} ${car.model}`}
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            <Camera className="h-10 w-10" aria-hidden />
+          <div className="flex h-full items-center justify-center text-slate-400">
+            <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7h8M5 11h14M5 11l1-4h12l1 4M5 11v5h14v-5M9 16v2m6-2v2"
+              />
+            </svg>
           </div>
         )}
-
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
           <span className="whitespace-nowrap rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-sm">
             {car.condition}
@@ -48,45 +48,41 @@ export default function CarCard({ car }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        <p className="text-sm font-medium text-muted-foreground">{car.year}</p>
-        <h3 className="mt-0.5 text-lg font-semibold leading-snug text-foreground">
-          <Link
-            href={`/cars/${car.slug}`}
-            className="outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
-          >
-            {car.make} {car.model}
-          </Link>
-        </h3>
-
-        <ul className="mb-5 mt-3 flex flex-wrap gap-2" aria-label="Key details">
-          {specs.map(({ icon: Icon, label, title }) => (
-            <li
-              key={title}
-              title={title}
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-md bg-muted px-2 py-1 text-sm text-muted-foreground"
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden />
-              <span className="sr-only">{title}: </span>
-              {label}
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-auto flex items-end justify-between gap-3 border-t pt-4">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
           <div>
-            <p className="text-xl font-bold tracking-tight text-primary">{formatGHS(car.price)}</p>
-            <p className="text-sm text-muted-foreground">{formatUSD(car.price)}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {car.year}
+            </p>
+            <h3 className="mt-0.5 text-base font-semibold text-foreground">
+              {car.make} {car.model}
+            </h3>
           </div>
-          <span
-            className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary"
-            aria-hidden
-          >
-            View details
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none" />
-          </span>
+          <div className="text-right">
+            <p className="text-lg font-bold text-primary">{formatGHS(car.price)}</p>
+            <p className="text-xs text-muted-foreground">{formatUSD(car.price)}</p>
+          </div>
         </div>
-      </div>
+
+        <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Gauge className="h-3.5 w-3.5" />
+            {formattedMileage} km
+          </span>
+          <span className="flex items-center gap-1">
+            <Fuel className="h-3.5 w-3.5" />
+            {car.engineSize}
+          </span>
+          <span>{car.transmission}</span>
+        </div>
+
+        <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+          <Link href={`/cars/${car.slug}`}>
+            View Details
+            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      </CardContent>
     </Card>
   )
 }

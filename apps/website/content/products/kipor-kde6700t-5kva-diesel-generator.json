@@ -1,0 +1,45 @@
+{
+  "name": "Kipor KDE6700T 5KVA Diesel Generator",
+  "available": true,
+  "category": "generators",
+  "price": 3200,
+  "description": "A rugged diesel generator built for Ghana's demands. The KDE6700T delivers reliable 5KVA power for homes, small offices, and workshops — with an 8-hour runtime per tank and auto safety shutdowns.",
+  "images": [
+    "/images/products/kipor-kde6700t-5kva-diesel-generator/images/0.png",
+    "/images/products/kipor-kde6700t-5kva-diesel-generator/images/1.png",
+    "/images/products/kipor-kde6700t-5kva-diesel-generator/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "Power Output",
+      "value": "5 KVA"
+    },
+    {
+      "label": "Fuel Type",
+      "value": "Diesel"
+    },
+    {
+      "label": "Runtime (full load)",
+      "value": "8 hrs"
+    },
+    {
+      "label": "Tank Capacity",
+      "value": "15 L"
+    },
+    {
+      "label": "Noise Level",
+      "value": "72 dB"
+    },
+    {
+      "label": "Phase",
+      "value": "Single Phase"
+    }
+  ],
+  "features": [
+    "Electric Start",
+    "Auto Low-Oil Shutdown",
+    "Voltmeter & Frequency Meter",
+    "12V DC Output",
+    "Heavy-Duty Frame"
+  ]
+}

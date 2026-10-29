@@ -1,0 +1,45 @@
+{
+  "name": "48W LED Recessed Panel Light",
+  "available": true,
+  "category": "lighting",
+  "price": 95,
+  "description": "The go-to panel for offices, clinics, and shops. A single 48W panel lights a full 3×3m room with even, glare-free illumination — replacing four 20W fluorescent tubes at a fraction of the running cost.",
+  "images": [
+    "/images/products/led-panel-light-48w-recessed/images/0.png",
+    "/images/products/led-panel-light-48w-recessed/images/1.png",
+    "/images/products/led-panel-light-48w-recessed/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "Wattage",
+      "value": "48W"
+    },
+    {
+      "label": "Lumen Output",
+      "value": "4,320 lm"
+    },
+    {
+      "label": "Colour Temperature",
+      "value": "4000K (Cool White)"
+    },
+    {
+      "label": "Size",
+      "value": "600mm × 600mm"
+    },
+    {
+      "label": "Lifespan",
+      "value": "40,000 hrs"
+    },
+    {
+      "label": "CRI",
+      "value": ">80"
+    }
+  ],
+  "features": [
+    "Flicker-Free",
+    "Even Light Distribution",
+    "Drop Ceiling Compatible",
+    "No UV or IR Emissions",
+    "Easy Plug-In Installation"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "name": "Sumec Firman 10KVA Generator",
+  "available": true,
+  "category": "generators",
+  "price": 5800,
+  "description": "The Firman 10KVA is a serious machine for serious power cuts. With ATS compatibility, remote start, and a 25-litre tank, it keeps your home or business running through the longest outages.",
+  "images": [
+    "/images/products/sumec-firman-10kva-generator/images/0.png",
+    "/images/products/sumec-firman-10kva-generator/images/1.png",
+    "/images/products/sumec-firman-10kva-generator/images/2.png"
+  ],
+  "specs": [
+    {
+      "label": "Power Output",
+      "value": "10 KVA"
+    },
+    {
+      "label": "Fuel Type",
+      "value": "Petrol"
+    },
+    {
+      "label": "Runtime (full load)",
+      "value": "10 hrs"
+    },
+    {
+      "label": "Tank Capacity",
+      "value": "25 L"
+    },
+    {
+      "label": "Noise Level",
+      "value": "68 dB"
+    },
+    {
+      "label": "Phase",
+      "value": "Single Phase"
+    }
+  ],
+  "features": [
+    "Remote Start",
+    "ATS Compatible",
+    "AVR for Stable Voltage",
+    "4x 13A Outlets",
+    "USB Charging Port",
+    "Low Noise Muffler"
+  ]
+}

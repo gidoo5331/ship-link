@@ -1,0 +1,26 @@
+{
+  "title": "2020 Toyota Voxy",
+  "available": true,
+  "make": "Toyota",
+  "model": "Voxy",
+  "year": "2020",
+  "price": 19500,
+  "mileage": 41000,
+  "engineSize": "2.0L",
+  "transmission": "Automatic",
+  "color": "Pearl White",
+  "condition": "Foreign Used",
+  "description": "The Voxy is the family people mover of choice. With 8 seats, sliding rear doors, and a spacious cabin, it handles school runs, family trips, and airport pickups with ease.",
+  "images": [
+    "/images/cars/2020-toyota-voxy/images/0.jpg",
+    "/images/cars/2020-toyota-voxy/images/1.jpg",
+    "/images/cars/2020-toyota-voxy/images/2.jpg"
+  ],
+  "features": [
+    "8-Seater",
+    "Power Sliding Doors",
+    "DVD Entertainment",
+    "Reverse Camera",
+    "Captain Seats"
+  ]
+}

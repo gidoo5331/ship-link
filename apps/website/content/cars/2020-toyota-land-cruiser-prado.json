@@ -1,0 +1,26 @@
+{
+  "title": "2020 Toyota Land Cruiser Prado",
+  "available": true,
+  "make": "Toyota",
+  "model": "Land Cruiser Prado",
+  "year": "2020",
+  "price": 44000,
+  "mileage": 35000,
+  "engineSize": "2.8L Diesel",
+  "transmission": "Automatic",
+  "color": "Graphite Grey",
+  "condition": "Foreign Used",
+  "description": "Built for every road Ghana throws at it. The Prado TXL combines luxury-grade comfort with serious off-road capability — from Accra highways to Northern bush tracks.",
+  "images": [
+    "/images/cars/2020-toyota-land-cruiser-prado/images/0.jpg",
+    "/images/cars/2020-toyota-land-cruiser-prado/images/1.jpg",
+    "/images/cars/2020-toyota-land-cruiser-prado/images/2.jpg"
+  ],
+  "features": [
+    "4WD",
+    "Crawl Control",
+    "Kinetic Dynamic Suspension",
+    "Leather Interior",
+    "360 Camera"
+  ]
+}

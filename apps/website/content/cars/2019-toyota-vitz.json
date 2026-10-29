@@ -1,0 +1,26 @@
+{
+  "title": "2019 Toyota Vitz",
+  "available": true,
+  "make": "Toyota",
+  "model": "Vitz",
+  "year": "2019",
+  "price": 9500,
+  "mileage": 52000,
+  "engineSize": "1.3L",
+  "transmission": "Automatic",
+  "color": "Chilli Red",
+  "condition": "Foreign Used",
+  "description": "The Vitz is Ghana's go-to city car — compact, fuel-sipping, and easy to park anywhere. This 2019 model is ideal for daily commutes and tight urban roads.",
+  "images": [
+    "/images/cars/2019-toyota-vitz/images/0.jpg",
+    "/images/cars/2019-toyota-vitz/images/1.jpg",
+    "/images/cars/2019-toyota-vitz/images/2.jpg"
+  ],
+  "features": [
+    "Fuel Economy",
+    "Reverse Camera",
+    "Bluetooth Audio",
+    "Keyless Entry",
+    "Auto AC"
+  ]
+}

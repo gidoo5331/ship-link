@@ -1,0 +1,26 @@
+{
+  "title": "2022 Lexus RX 350",
+  "available": true,
+  "make": "Lexus",
+  "model": "RX 350",
+  "year": "2022",
+  "price": 42000,
+  "mileage": 22000,
+  "engineSize": "3.5L V6",
+  "transmission": "Automatic",
+  "color": "Obsidian Blue",
+  "condition": "Foreign Used",
+  "description": "Luxury meets reliability in this nearly-new Lexus RX 350. Premium cabin materials, whisper-quiet ride, and packed with safety tech.",
+  "images": [
+    "/images/cars/2022-lexus-rx-350/images/0.jpg",
+    "/images/cars/2022-lexus-rx-350/images/1.jpg",
+    "/images/cars/2022-lexus-rx-350/images/2.jpg"
+  ],
+  "features": [
+    "Premium Sound System",
+    "Panoramic Sunroof",
+    "360 Camera",
+    "Heated & Ventilated Seats",
+    "Mark Levinson Audio"
+  ]
+}
